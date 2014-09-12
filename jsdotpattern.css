@@ -1,0 +1,28 @@
+
+#Svg {
+  border-color: #CCCCCC;
+  border: 1px solid;
+}
+
+#Svg_Test {
+  margin: 1px;
+}
+
+#pointdata {
+  margin-top: 12px;
+  font-family: monospace;
+  font-size: 90%;
+}
+
+#code {
+  font-family: monospace;
+  font-size: 90%;
+}
+
+.dotpattern {
+  font-size: 12px;
+}
+
+input.nb {
+  width: 21px;
+}

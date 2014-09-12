@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8"/>
+	<title>jsdotpattern - Periodic dot and symbol pattern generator</title>
+	<script type="text/javascript" src="js/jquery-1.11.1.min.js"></script>
+	<script type="text/javascript" src="js/snap.svg-min.js"></script>
+	<script type="text/javascript" src="js/svg_todataurl.js"></script>
+	<script type="text/javascript" src="symbols.js"></script>
+	<script type="text/javascript" src="jsdotpattern.js"></script>
+	<link rel="stylesheet" type="text/css" href="jsdotpattern.css" />
+</head>
+<body>
+	<div class="main">
+		<h2>Periodic dot and symbol pattern generator</h2>
+		<p>This tool generates a irregular but uniformly distributed dot pattern with
+		periodic boundary conditions and symbol patterns based on it for use in map rendering.  It does so by first 
+		producing a randomly displaced grid pattern (<em>generate</em>) and then relaxing the points to maximize their
+		distance (<em>relax</em>).  It also produces SVGs placing symbols at the point locations including the periodic 
+		duplicates necessary for a seamless pattern (<em>render</em>) and can print out the raw point location list (<em>point list</em>).</p>
+		<p><strong>Warning:</strong> the whole tool is quite experimental, no sanity checks are performed on the parameters, strange things are likely
+		to happen, use at your own risk.</p>
+		<p>If you want to modify or extent the functionality you can find the <a href="https://github.com/imagico/jsdotpattern">source code on github</a>.
+		Licensed under <a href="http://www.gnu.org/licenses/agpl-3.0.html">AGPL</a>.</p>
+		<table class="dotpattern">
+		<tr>
+		<td><strong>dot pattern:</strong>
+		distance: <input class="nb" type="text" size="2" name="dot_dist" id="dot_dist" value="20" title="average distance of dots"/>
+		radius: <input class="nb" type="text" size="2" name="dot_radius" id="dot_radius" value="32" title="larger than distance, power of two, less than half the pattern size"/><br>
+		</td>
+		<td><strong>rendered symbol pattern:</strong></td>
+		<td><strong>symbol definition:</strong></td>
+		</tr>
+		<tr>
+		<td>
+			<canvas id="Canvas" width="256" height="256" style="border:1px solid #000000;"></canvas> 
+		</td>
+		<td>
+			<svg id="Svg" width="256" height="256">
+				<defs>
+					<clipPath id="clipPath">
+						<rect x="0" y="0" width="256" height="256" />
+					</clipPath>
+				</defs>
+				<g id="Pattern" style="clip-path: url(#clipPath);">
+				</g>
+			</svg>
+		</td>
+		<td>
+			<div>
+				<textarea name="code" id="code" rows="16" cols="80" title="enter SVG code for the symbol here"></textarea><br>
+				<svg id="Svg_Test" width="16" height="16"></svg>
+				offset: <input type="text" size="3" name="offset_x" id="offset_x" value="" />
+				<input type="text" size="3" name="offset_y" id="offset_y" value="" />
+				scale: <input type="text" size="4" name="sym_scale" id="sym_scale" value="1.0" title="scale factor to apply to the symbol for rendering"/>
+				<input type="button" name="B_inspect" id="B_inspect" value="show" title="show a preview of the text field in original size and calculate offsets">
+				<select name="SelSymbol" id="SelSymbol" size="1"></select>
+				<input type="button" name="B_load" id="B_load" value="load" title="load the selected standard symbol from the library">
+			</div>
+		</div>
+		</td>
+		</tr>
+		</table>
+		<div class="dotpattern">
+			<input type="button" name="B_generate" id="B_generate" value="generate" title="generate a new random dot pattern">
+			<input type="button" name="B_relaxS" id="B_relaxS" value="relax small area" style="display:none;" title="relax the dot positions in the small topleft area">
+			<input type="button" name="B_relax" id="B_relax" value="relax" title="relax the dot positions to maximize their distance">
+			<input type="button" name="B_render" id="B_render" value="render" title"render the symbol from the right in the dot pattern on the left">
+			<a id="SvgData" target="_blank" href="data:" title="link to the generated SVG for saving">get pattern SVG data</a>
+			<input type="button" name="B_list" id="B_list" value="point list" title="print the point location list below for custom processing">
+			<span id="msg"></span>
+		</div>
+		<div id="pointdata"></div>
+	</div>
+</html>
