@@ -47,6 +47,10 @@ function generatePattern()
 	for (var py=0; py < DotCntL; py++)
 		for (var px=0; px < DotCntL; px++)
 		{
+			//var cx = Math.random()*GridSize;
+			//var cy = Math.random()*GridSize;
+			//var cx = (px+0.5)*DotDistComp;
+			//var cy = (py+0.5)*DotDistComp;
 			var cx = (px+0.05+Math.random()*0.9)*DotDistComp;
 			var cy = (py+0.05+Math.random()*0.9)*DotDistComp;
 			var ix = Math.floor(cx/DotRadius);
@@ -193,14 +197,17 @@ function updateDisplay()
 			ctx.fillStyle = "#0000FF";
 		else
 			ctx.fillStyle = "#FF0000";
-		ctx.fillRect(Math.floor(DotCoordinates[i].x)-1,Math.floor(DotCoordinates[i].y)-1,3,3);
+		//ctx.fillRect(Math.floor(DotCoordinates[i].x)-1,Math.floor(DotCoordinates[i].y)-1,3,3);
+		ctx.beginPath();
+		ctx.arc(Math.floor(DotCoordinates[i].x),Math.floor(DotCoordinates[i].y),0.9,0,2*Math.PI);
+		ctx.fill()
 	}
 }
 
 // --------------------------------------------------
 // render pattern as SVG
 // --------------------------------------------------
-function render()
+function render(px_align)
 {
 	var f = Snap.parse($('#code').val());
 	s.select('defs').selectAll('g').remove();
@@ -208,13 +215,18 @@ function render()
 	var sym = s.g();
 	sym.toDefs();
 	sym.append(f);
-	sym.transform("translate("+(0-$('#offset_x').val())+", "+(0-$('#offset_y').val())+") scale("+$('#sym_scale').val()+")");
+	sym.transform("scale("+$('#sym_scale').val()+") translate("+(0-$('#offset_x').val())+", "+(0-$('#offset_y').val())+")");
 	var g = s.select("#Pattern");
 
 	for (var i=0; i < DotCoordinates.length; i++)
 	{
 		var cx = DotCoordinates[i].x;
 		var cy = DotCoordinates[i].y;
+		if (px_align)
+		{
+			cx = Math.round(cx-0.5)+0.5;
+			cy = Math.round(cy-0.5)+0.5;
+		}
 		g.append(sym.use().attr({x: cx, y: cy}));
 
 		if (cx < DotRadius)
@@ -327,7 +339,11 @@ $(document).ready(function () {
 	});
 
 	$('#B_render').click(function() {
-		render();
+		render(false);
+	});
+
+	$('#B_prender').click(function() {
+		render(true);
 	});
 
 	$('#B_inspect').click(function() {

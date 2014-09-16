@@ -26,3 +26,7 @@
 input.nb {
   width: 21px;
 }
+
+p em {
+  font-style:italic;
+}

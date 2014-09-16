@@ -16,11 +16,11 @@
 		<p>This tool generates a irregular but uniformly distributed dot pattern with
 		periodic boundary conditions and symbol patterns based on it for use in map rendering.  It does so by first 
 		producing a randomly displaced grid pattern (<em>generate</em>) and then relaxing the points to maximize their
-		distance (<em>relax</em>).  It also produces SVGs placing symbols at the point locations including the periodic 
+		distance (<em>relax</em>, can be applied multiple times).  It also produces SVGs placing symbols at the point locations including the periodic 
 		duplicates necessary for a seamless pattern (<em>render</em>) and can print out the raw point location list (<em>point list</em>).</p>
 		<p><strong>Warning:</strong> the whole tool is quite experimental, no sanity checks are performed on the parameters, strange things are likely
 		to happen, use at your own risk.</p>
-		<p>If you want to modify or extent the functionality you can find the <a href="https://github.com/imagico/jsdotpattern">source code on github</a>.
+		<p>If you want to modify or extend the functionality you can find the <a href="https://github.com/imagico/jsdotpattern">source code on github</a>.
 		Licensed under <a href="http://www.gnu.org/licenses/agpl-3.0.html">AGPL</a>.</p>
 		<table class="dotpattern">
 		<tr>
@@ -66,7 +66,10 @@
 			<input type="button" name="B_relaxS" id="B_relaxS" value="relax small area" style="display:none;" title="relax the dot positions in the small topleft area">
 			<input type="button" name="B_relax" id="B_relax" value="relax" title="relax the dot positions to maximize their distance">
 			<input type="button" name="B_render" id="B_render" value="render" title"render the symbol from the right in the dot pattern on the left">
-			<a id="SvgData" target="_blank" href="data:" title="link to the generated SVG for saving">get pattern SVG data</a>
+			<input type="button" name="B_prender" id="B_prender" value="render (px aligned)" title"render the symbol from the right in the dot pattern on the left aligned to pixel coordinates">
+		</div>
+		<div class="dotpattern">
+			<a id="SvgData" target="_blank" href="data:" title="link to the generated SVG for saving">get patternSVG data</a>
 			<input type="button" name="B_list" id="B_list" value="point list" title="print the point location list below for custom processing">
 			<span id="msg"></span>
 		</div>
