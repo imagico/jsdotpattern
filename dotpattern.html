@@ -22,20 +22,18 @@
 		to happen, use at your own risk.</p>
 		<p>If you want to modify or extend the functionality you can find the <a href="https://github.com/imagico/jsdotpattern">source code on github</a>.
 		Licensed under <a href="http://www.gnu.org/licenses/agpl-3.0.html">AGPL</a>.</p>
+		<div class="form">
 		<table class="dotpattern">
 		<tr>
-		<td><strong>dot pattern:</strong>
-		distance: <input class="nb" type="text" size="2" name="dot_dist" id="dot_dist" value="20" title="average distance of dots"/>
-		radius: <input class="nb" type="text" size="2" name="dot_radius" id="dot_radius" value="32" title="larger than distance, power of two, less than half the pattern size"/><br>
-		</td>
+		<td><strong>dot pattern:</strong></td>
 		<td><strong>rendered symbol pattern:</strong></td>
 		<td><strong>symbol definition:</strong></td>
 		</tr>
 		<tr>
-		<td>
-			<canvas id="Canvas" width="256" height="256" style="border:1px solid #000000;"></canvas> 
+		<td class="rim">
+			<canvas id="Canvas" width="256" height="256"></canvas> 
 		</td>
-		<td>
+		<td class="rim">
 			<svg id="Svg" width="256" height="256">
 				<defs>
 					<clipPath id="clipPath">
@@ -48,11 +46,16 @@
 		</td>
 		<td>
 			<div>
-				<textarea name="code" id="code" rows="16" cols="80" title="enter SVG code for the symbol here"></textarea><br>
+			  <div id="code_single">
+				  <textarea name="code" id="code" rows="16" cols="80" title="enter SVG code for the symbol here"></textarea>
+			  </div>
+			  <div id="code_multi">
+			  </div>
 				<svg id="Svg_Test" width="16" height="16"></svg>
 				offset: <input type="text" size="3" name="offset_x" id="offset_x" value="" />
 				<input type="text" size="3" name="offset_y" id="offset_y" value="" />
 				scale: <input type="text" size="4" name="sym_scale" id="sym_scale" value="1.0" title="scale factor to apply to the symbol for rendering"/>
+				<input type="checkbox" name="B_rrotate" id="B_rrotate" value="1" title="rotate symbold randomly"> random rotate
 				<input type="button" name="B_inspect" id="B_inspect" value="show" title="show a preview of the text field in original size and calculate offsets">
 				<select name="SelSymbol" id="SelSymbol" size="1"></select>
 				<input type="button" name="B_load" id="B_load" value="load" title="load the selected standard symbol from the library">
@@ -60,18 +63,55 @@
 		</div>
 		</td>
 		</tr>
+		<tr>
+		<td colspan="3">
+		distance: <input class="nb" type="text" size="2" name="dot_dist" id="dot_dist" value="20" title="average distance of dots"/>
+		radius: <input class="nb" type="text" size="2" name="dot_radius" id="dot_radius" value="32" title="larger than distance, power of two, less than half the pattern size"/>
+		radius y: <input class="nb" type="text" size="2" name="dot_radius_y" id="dot_radius_y" value="32" title="vertical direction radius, not larger than radius, normally identical"/>
+		metric: <input class="nb" type="text" size="2" name="metric" id="metric" value="2" title="metric of distance calculation, normally 2, >100 is assumed to be maximum metric"/>
+			<input type="checkbox" name="B_casing" id="B_casing" value="1" title="render a white casing around individual symbols"> draw casing
+		</td>
+		</tr>
 		</table>
 		<div class="dotpattern">
 			<input type="button" name="B_generate" id="B_generate" value="generate" title="generate a new random dot pattern">
 			<input type="button" name="B_relaxS" id="B_relaxS" value="relax small area" style="display:none;" title="relax the dot positions in the small topleft area">
 			<input type="button" name="B_relax" id="B_relax" value="relax" title="relax the dot positions to maximize their distance">
-			<input type="button" name="B_render" id="B_render" value="render" title"render the symbol from the right in the dot pattern on the left">
-			<input type="button" name="B_prender" id="B_prender" value="render (px aligned)" title"render the symbol from the right in the dot pattern on the left aligned to pixel coordinates">
+			<input type="button" name="B_relax10" id="B_relax10" value="relax &times;10" title="relax more">
+			<input type="button" name="B_shake" id="B_shake" value="shake" title="randomize the pattern a bit">
+			<input type="button" name="B_render" id="B_render" value="render" title="render the symbol from the right in the dot pattern on the left">
+			<input type="button" name="B_prender" id="B_prender" value="render (px aligned)" title="render the symbol from the right in the dot pattern on the left aligned to pixel coordinates">
 		</div>
 		<div class="dotpattern">
-			<a id="SvgData" target="_blank" href="data:" title="link to the generated SVG for saving">get patternSVG data</a>
+			<a id="SvgData" target="_blank" href="data:" title="link to the generated SVG for saving">get pattern SVG data</a>
 			<input type="button" name="B_list" id="B_list" value="point list" title="print the point location list below for custom processing">
+			<input type="button" name="B_help" id="B_help" value="instructions" title="show/hide basic use instructions">
 			<span id="msg"></span>
+		</div>
+		<div class="dotpattern help">
+			<h3>basic use instructions:</h3>
+			<p>The following buttons are available:</p>
+			<ul>
+				<li><em>generate</em> generates a new random point set.  This should be done before any of the other buttons is used.</li>
+				<li><em>relax</em> relaxes the point positions by maximizing their distance.</li>
+				<li><em>relax &times;10</em> relaxes ten times.</li>
+				<li><em>shake</em> displaces the points of the current set each by a small random distance.</li>
+				<li><em>render</em> renders the current point pattern in a svg using the symbol specified on the right.</li>
+				<li><em>render (px aligned)</em> renders the current point pattern aligned to integer pixel coordinates.</li>
+				<li><em>load</em> on the right loads the selected symbol from the internal symbol database.</li>
+				<li><em>show</em> displays the entered svg symbol and calculates offsets to center it.</li>
+			</ul>
+			<p>The following input fields are available:</p>
+			<ul>
+				<li><em>distance</em> specifies the dot distance for the initial generation of the points.</li>
+				<li><em>radius</em> is the influence radius of the points during relaxation.  Should be larger than distance, needs to be a power of two and less than half the pattern size.</li>
+				<li><em>radius y</em> a different radius can be specified for the vertical direction, can be used for anisotropic patterns.  No larger than nradius but does not need to be a power of two.</li>
+				<li><em>metric</em> specifies the metric for distance calculation.  The default of 2 means normal euclidian metric.</li>
+				<li><em>draw casing</em> when activated a white casing is drawn during rendering below every symbol to separate it from other symbols in case of overlap.</li>
+				<li><em>offset</em> specifies an offset for the symbol used when rendering it in the pattern.</li>
+				<li><em>scale</em> specifies a scale factor for the symbol when used in the pattern.</li>
+			</ul>
+		</div>
 		</div>
 		<div id="pointdata"></div>
 	</div>

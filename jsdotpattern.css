@@ -1,9 +1,4 @@
 
-#Svg {
-  border-color: #CCCCCC;
-  border: 1px solid;
-}
-
 #Svg_Test {
   margin: 1px;
 }
@@ -12,21 +7,51 @@
   margin-top: 12px;
   font-family: monospace;
   font-size: 90%;
+  clear: both;
 }
 
-#code {
+.code, textarea {
   font-family: monospace;
   font-size: 90%;
+}
+
+#code_multi { 
+	display: none;
+}
+
+#msg {
+  color: #000080;
+  font-style:italic;
+}
+
+#B_casing {
+  vertical-align: bottom;
 }
 
 .dotpattern {
   font-size: 12px;
 }
 
+.rim {
+  border-color: #CCCCCC;
+  border: 1px solid;
+}
+
+div.form { 
+  padding: 6px;
+  border: 1px solid #c0c0c0;
+  background-color: #f0f0f0;
+  float: left;
+}
+
 input.nb {
   width: 21px;
 }
 
-p em {
+p em, ul em {
   font-style:italic;
+}
+
+.help { 
+	display: none;
 }
