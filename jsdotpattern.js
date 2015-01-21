@@ -29,6 +29,36 @@ var PatternData =
 }
 
 // --------------------------------------------------
+// reset pattern data with a certain pattern size
+// --------------------------------------------------
+function reset(size)
+{
+	PatternData.GridCnt = 0;
+	PatternData.GridCntS = 0;
+	PatternData.RelaxState = -1;
+	PatternData.DotGrid = [];
+	PatternData.DotGridS = [];
+	PatternData.DotCoordinates = [];
+
+	PatternData.GridSize = size;
+	GridSize = size;
+
+	var c = document.getElementById("Canvas");
+	c.width = size;
+	c.height = size;
+
+	s = Snap("#Svg");
+	s.attr({width: size, height: size});
+
+	s.select('defs').selectAll('g').remove();
+	s.select("#Pattern").selectAll('*').remove();
+
+	s.select('defs').select('clipPath').select('*').remove();
+	var rect = Snap().rect(0, 0, size, size);
+	s.select('defs').select('clipPath').append(rect);
+}
+
+// --------------------------------------------------
 // generate randomized grid dot pattern
 // --------------------------------------------------
 function generatePattern()
@@ -220,7 +250,7 @@ function relaxStepS(step)
 }
 
 // --------------------------------------------------
-// modify a color map with auto Luminance
+// render point display
 // --------------------------------------------------
 function updateDisplay()
 {
@@ -248,6 +278,9 @@ function updateDisplay()
 	}
 }
 
+// --------------------------------------------------
+// render pattern symbol
+// --------------------------------------------------
 function render_symbol(pattern, sym, symc, px_align)
 {
 	for (var i=0; i < PatternData.DotCoordinates.length; i++)
@@ -259,8 +292,8 @@ function render_symbol(pattern, sym, symc, px_align)
 
 		if (px_align)
 		{
-			cx = Math.round(cx-0.5)+0.5;
-			cy = Math.round(cy-0.5)+0.5;
+			cx = Math.round(cx-0.5);
+			cy = Math.round(cy-0.5);
 		}
 
 		if (symc.length > 0)
@@ -456,8 +489,8 @@ function inspect()
 	var se = sym.append(Snap.parse($('#code').val()));
 	var bb = se.getBBox();
 	st.attr({viewBox: [bb.x, bb.y, bb.w, bb.h]});
-	$('#offset_x').val(bb.cx);
-	$('#offset_y').val(bb.cy);
+	$('#offset_x').val(Math.round(bb.cx));
+	$('#offset_y').val(Math.round(bb.cy));
 }
 
 $(document).ready(function () {
@@ -468,6 +501,12 @@ $(document).ready(function () {
 	$('#B_generate').click(function() {
 		generatePattern();
 		updateDisplay();
+	});
+
+	$('.sz-switch').click(function() {
+    $('.sz-switch').removeClass("active").addClass("inactive");
+    $(this).removeClass("inactive").addClass("active");
+    reset(parseInt($(this).attr("id").split("_")[1]));
 	});
 
 	$('#B_relax').click(function() {
@@ -599,12 +638,13 @@ $(document).ready(function () {
 		}
 	});
 
-	s = Snap("#Svg");
-	st = Snap("#Svg_Test");
-
 	for (var i=0; i < SelSyms.length; i++)
 		$("#SelSymbol").append("<option value='"+i+"'>"+SelSyms[i].name+"</option>");
 
 	$("#code").text(SelSyms[$("#SelSymbol").val()].svg);
+
+	reset(GridSize);
+
+	st = Snap("#Svg_Test");
 
 });

@@ -34,7 +34,7 @@
 			<canvas id="Canvas" width="256" height="256"></canvas> 
 		</td>
 		<td class="rim">
-			<svg id="Svg" width="256" height="256">
+			<svg id="Svg">
 				<defs>
 					<clipPath id="clipPath">
 						<rect x="0" y="0" width="256" height="256" />
@@ -81,12 +81,19 @@
 			<input type="button" name="B_shake" id="B_shake" value="shake" title="randomize the pattern a bit">
 			<input type="button" name="B_render" id="B_render" value="render" title="render the symbol from the right in the dot pattern on the left">
 			<input type="button" name="B_prender" id="B_prender" value="render (px aligned)" title="render the symbol from the right in the dot pattern on the left aligned to pixel coordinates">
+			<span id="msg"></span>
 		</div>
 		<div class="dotpattern">
 			<a id="SvgData" target="_blank" href="data:" title="link to the generated SVG for saving">get pattern SVG data</a>
 			<input type="button" name="B_list" id="B_list" value="point list" title="print the point location list below for custom processing">
 			<input type="button" name="B_help" id="B_help" value="instructions" title="show/hide basic use instructions">
-			<span id="msg"></span>
+			pattern size: 
+      <span class="sz-switch inactive" id="sz_64">64</span> | 
+      <span class="sz-switch inactive" id="sz_128">128</span> | 
+      <span class="sz-switch active" id="sz_256">256</span> | 
+      <span class="sz-switch inactive" id="sz_512">512</span> | 
+      <span class="sz-switch inactive" id="sz_1024">1024</span>
+
 		</div>
 		<div class="dotpattern help">
 			<h3>basic use instructions:</h3>

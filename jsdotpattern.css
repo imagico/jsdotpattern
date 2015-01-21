@@ -55,3 +55,25 @@ p em, ul em {
 .help { 
 	display: none;
 }
+
+.active {
+  color: #AA4411;
+  background-color: #E0D0C0;
+}
+
+.inactive {
+  color: #dddddd;
+  background-color: #808AC0;
+}
+
+.inactive:hover {
+  border: 1px outset #404050;
+}
+
+.sz-switch {
+  border: 1px solid #505050;
+  padding: 1px;
+  padding-right: 3px;
+  padding-left: 3px;
+  cursor:pointer;
+}
