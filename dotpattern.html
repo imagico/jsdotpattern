@@ -6,9 +6,14 @@
 	<script type="text/javascript" src="js/jquery-1.11.1.min.js"></script>
 	<script type="text/javascript" src="js/snap.svg-min.js"></script>
 	<script type="text/javascript" src="js/svg_todataurl.js"></script>
+	<script type="text/javascript" src="js/slick.min.js"></script>
+	<script type="text/javascript" src="js/url.min.js"></script>
+	<script type="text/javascript" src="js/seedrandom.min.js"></script>
 	<script type="text/javascript" src="symbols.js"></script>
 	<script type="text/javascript" src="jsdotpattern.js"></script>
-	<link rel="stylesheet" type="text/css" href="jsdotpattern.css" />
+	<link rel="stylesheet" type="text/css" href="css/slick.css" />
+	<link rel="stylesheet" type="text/css" href="css/slick-theme.css" />
+	<link rel="stylesheet" type="text/css" href="css/jsdotpattern.css" />
 </head>
 <body>
 	<div class="main">
@@ -18,10 +23,9 @@
 		producing a randomly displaced grid pattern (<em>generate</em>) and then relaxing the points to maximize their
 		distance (<em>relax</em>, can be applied multiple times).  It also produces SVGs placing symbols at the point locations including the periodic 
 		duplicates necessary for a seamless pattern (<em>render</em>) and can print out the raw point location list (<em>point list</em>).</p>
-		<p><strong>Warning:</strong> the whole tool is quite experimental, no sanity checks are performed on the parameters, strange things are likely
-		to happen, use at your own risk.</p>
 		<p>If you want to modify or extend the functionality you can find the <a href="https://github.com/imagico/jsdotpattern">source code on github</a>.
-		Licensed under <a href="http://www.gnu.org/licenses/agpl-3.0.html">AGPL</a>.</p>
+		Licensed under <a href="http://www.gnu.org/licenses/agpl-3.0.html">AGPL</a>.  Symbols are <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0</a>
+		but it would be much appreciated if you credit me and support work on jsdotpattern with a donation in case you use some of the more elaborate stuff in your map designs.</p>
 		<div class="form">
 		<table class="dotpattern">
 		<tr>
@@ -44,23 +48,24 @@
 				</g>
 			</svg>
 		</td>
-		<td>
-			<div>
-			  <div id="code_single">
-				  <textarea name="code" id="code" rows="16" cols="80" title="enter SVG code for the symbol here"></textarea>
-			  </div>
-			  <div id="code_multi">
-			  </div>
-				<svg id="Svg_Test" width="16" height="16"></svg>
+		<td class="sym-stuff">
+		  <div id="sym_selector_box">
+				<div id="sym_selector">
+				</div>
+		  </div>
+		  <div id="code_single">
+			  <textarea class="svg-code" cols="74" rows="9" name="code" id="code"title="enter SVG code for the symbol here"></textarea>
+		  </div>
+		  <div id="code_multi">
+		  </div>
+			<div class="sym-bar">
+				<div id="sym_preview"><svg id="Svg_Test"></svg></div>
 				offset: <input type="text" size="3" name="offset_x" id="offset_x" value="" />
 				<input type="text" size="3" name="offset_y" id="offset_y" value="" />
 				scale: <input type="text" size="4" name="sym_scale" id="sym_scale" value="1.0" title="scale factor to apply to the symbol for rendering"/>
-				<input type="checkbox" name="B_rrotate" id="B_rrotate" value="1" title="rotate symbold randomly"> random rotate
-				<input type="button" name="B_inspect" id="B_inspect" value="show" title="show a preview of the text field in original size and calculate offsets">
-				<select name="SelSymbol" id="SelSymbol" size="1"></select>
-				<input type="button" name="B_load" id="B_load" value="load" title="load the selected standard symbol from the library">
+				<input type="checkbox" name="B_rrotate" id="B_rrotate" value="1" title="rotate symbols randomly"> random rotate
+				<input type="button" name="B_inspect" id="B_inspect" value="show" title="show a preview of the text field in scaled size and calculate offsets">
 			</div>
-		</div>
 		</td>
 		</tr>
 		<tr>
@@ -69,7 +74,7 @@
 		radius: <input class="nb" type="text" size="2" name="dot_radius" id="dot_radius" value="32" title="larger than distance, power of two, less than half the pattern size"/>
 		radius y: <input class="nb" type="text" size="2" name="dot_radius_y" id="dot_radius_y" value="32" title="vertical direction radius, not larger than radius, normally identical"/>
 		metric: <input class="nb" type="text" size="2" name="metric" id="metric" value="2" title="metric of distance calculation, normally 2, >100 is assumed to be maximum metric"/>
-			<input type="checkbox" name="B_casing" id="B_casing" value="1" title="render a white casing around individual symbols"> draw casing
+		casing: <input class="nb" type="text" size="2" name="casing_width" id="casing_width" value="0" title="width of white casing around individual symbols (0 means no casing)"/>
 		</td>
 		</tr>
 		</table>
@@ -81,11 +86,13 @@
 			<input type="button" name="B_shake" id="B_shake" value="shake" title="randomize the pattern a bit">
 			<input type="button" name="B_render" id="B_render" value="render" title="render the symbol from the right in the dot pattern on the left">
 			<input type="button" name="B_prender" id="B_prender" value="render (px aligned)" title="render the symbol from the right in the dot pattern on the left aligned to pixel coordinates">
+			<input type="button" name="B_irender" id="B_irender" value="render (inlined)" title="render the symbol from the right in the dot pattern on the left with inlined geometries aligned to pixel coordinates">
 			<span id="msg"></span>
 		</div>
 		<div class="dotpattern">
 			<a id="SvgData" target="_blank" href="data:" title="link to the generated SVG for saving">get pattern SVG data</a>
 			<input type="button" name="B_list" id="B_list" value="point list" title="print the point location list below for custom processing">
+			<input type="button" name="B_cmdseq" id="B_cmdseq" value="sequence" title="show/hide current command sequence">
 			<input type="button" name="B_help" id="B_help" value="instructions" title="show/hide basic use instructions">
 			pattern size: 
       <span class="sz-switch inactive" id="sz_64">64</span> | 
@@ -94,6 +101,10 @@
       <span class="sz-switch inactive" id="sz_512">512</span> | 
       <span class="sz-switch inactive" id="sz_1024">1024</span>
 
+		</div>
+		<div class="dotpattern cmdseq">
+			<a id="cmd_seq_link" href="#">command sequence</a>: <span id="cmd_seq"></span><br>
+      <span class="alert">command sequence replay does not work with manually entered symbols!</span>
 		</div>
 		<div class="dotpattern help">
 			<h3>basic use instructions:</h3>
@@ -105,7 +116,7 @@
 				<li><em>shake</em> displaces the points of the current set each by a small random distance.</li>
 				<li><em>render</em> renders the current point pattern in a svg using the symbol specified on the right.</li>
 				<li><em>render (px aligned)</em> renders the current point pattern aligned to integer pixel coordinates.</li>
-				<li><em>load</em> on the right loads the selected symbol from the internal symbol database.</li>
+				<li><em>render (inlined)</em> renders the current point pattern aligned to integer pixel coordinates and inlines the symbols instead of referencing them.</li>
 				<li><em>show</em> displays the entered svg symbol and calculates offsets to center it.</li>
 			</ul>
 			<p>The following input fields are available:</p>
@@ -114,7 +125,7 @@
 				<li><em>radius</em> is the influence radius of the points during relaxation.  Should be larger than distance, needs to be a power of two and less than half the pattern size.</li>
 				<li><em>radius y</em> a different radius can be specified for the vertical direction, can be used for anisotropic patterns.  No larger than nradius but does not need to be a power of two.</li>
 				<li><em>metric</em> specifies the metric for distance calculation.  The default of 2 means normal euclidian metric.</li>
-				<li><em>draw casing</em> when activated a white casing is drawn during rendering below every symbol to separate it from other symbols in case of overlap.</li>
+				<li><em>casing</em> when >0 a white casing is drawn in that width during rendering below every symbol to separate it from other symbols in case of overlap.</li>
 				<li><em>offset</em> specifies an offset for the symbol used when rendering it in the pattern.</li>
 				<li><em>scale</em> specifies a scale factor for the symbol when used in the pattern.</li>
 			</ul>

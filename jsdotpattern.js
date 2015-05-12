@@ -3,8 +3,6 @@ if (typeof GridSize == 'undefined')
 	var GridSize = 256;
 if (typeof GridSizeS == 'undefined')
 	var GridSizeS = 0;
-if (typeof CasingWidth == 'undefined')
-	var CasingWidth = 12;
 
 var s;
 var st;
@@ -12,6 +10,10 @@ var st;
 var worker;
 
 var code_multi_cnt = 0;
+var sym_id = 0;
+
+var cmd_sequence = "";
+var cmd_sequence_run = [];
 
 var PatternData = 
 {
@@ -53,19 +55,33 @@ function reset(size)
 	s.select('defs').selectAll('g').remove();
 	s.select("#Pattern").selectAll('*').remove();
 
-	s.select('defs').select('clipPath').select('*').remove();
 	var rect = Snap().rect(0, 0, size, size);
-	s.select('defs').select('clipPath').append(rect);
+
+	if (s.select('defs').select('clipPath'))
+	{
+		s.select('defs').select('clipPath').select('*').remove();
+		s.select('defs').select('clipPath').append(rect);
+	}
+	else
+	{
+		s.select('defs').select('*').remove();
+		s.select('defs').append(Snap.parse("<clipPath id=\"clipPath\"><rect x=\"0\" y=\"0\" width=\""+size+"\" height=\""+size+"\" /></clipPath>"));
+	}
+	
+	if (size <= 256)
+		$("#code_multi").css("height", "122px");
+	else
+		$("#code_multi").css("height", "320px");
 }
 
 // --------------------------------------------------
 // generate randomized grid dot pattern
 // --------------------------------------------------
-function generatePattern()
+function generatePattern(dist, radius, radiusY)
 {
-	PatternData.DotDist = parseFloat($('#dot_dist').val());
-	PatternData.DotRadius = parseInt($('#dot_radius').val());
-	PatternData.DotRadiusY = parseFloat($('#dot_radius_y').val());
+	PatternData.DotDist = dist;
+	PatternData.DotRadius = radius;
+	PatternData.DotRadiusY = radiusY;
 	PatternData.GridCnt = PatternData.GridSize/PatternData.DotRadius;
 	PatternData.GridCntS = PatternData.GridSizeS/PatternData.DotRadius;
 
@@ -279,9 +295,18 @@ function updateDisplay()
 }
 
 // --------------------------------------------------
-// render pattern symbol
+// append symbol instance to pattern svg
 // --------------------------------------------------
-function render_symbol(pattern, sym, symc, px_align)
+function pattern_insert_symbol(sym, cx, cy, sym_inl)
+{
+	if (sym_inl) s.select("#Pattern").append(sym.clone().transform("translate("+cx+", "+cy+")"));
+	else s.select("#Pattern").append(sym.use().attr({x: cx, y: cy}));
+}
+
+// --------------------------------------------------
+// render pattern symbols
+// --------------------------------------------------
+function render_symbols(sym, symc, px_align, sym_inl)
 {
 	for (var i=0; i < PatternData.DotCoordinates.length; i++)
 	{
@@ -297,80 +322,80 @@ function render_symbol(pattern, sym, symc, px_align)
 		}
 
 		if (symc.length > 0)
-			pattern.append(symc[snb].use().attr({x: cx, y: cy}));
-		pattern.append(sym[snb].use().attr({x: cx, y: cy}));
+			pattern_insert_symbol(symc[snb], cx, cy, sym_inl);
+		pattern_insert_symbol(sym[snb], cx, cy, sym_inl);
 
 		if (cx < PatternData.DotRadius)
 		{
 			if (symc.length > 0)
-				pattern.append(symc[snb].use().attr({x: (cx+PatternData.GridSize), y: cy}));
-			pattern.append(sym[snb].use().attr({x: (cx+PatternData.GridSize), y: cy}));
+				pattern_insert_symbol(symc[snb], (cx+PatternData.GridSize), cy, sym_inl);
+			pattern_insert_symbol(sym[snb], (cx+PatternData.GridSize), cy, sym_inl);
 			if (cy < PatternData.DotRadius)
 			{
 				if (symc.length > 0)
-					pattern.append(symc[snb].use().attr({x: (cx+PatternData.GridSize), y: (cy+PatternData.GridSize)}));
-				pattern.append(sym[snb].use().attr({x: (cx+PatternData.GridSize), y: (cy+PatternData.GridSize)}));
+					pattern_insert_symbol(symc[snb], (cx+PatternData.GridSize), (cy+PatternData.GridSize), sym_inl);
+				pattern_insert_symbol(sym[snb], (cx+PatternData.GridSize), (cy+PatternData.GridSize), sym_inl);
 			}
 			else if (cy > PatternData.GridSize-PatternData.DotRadius)
 			{
 				if (symc.length > 0)
-					pattern.append(symc[snb].use().attr({x: (cx+PatternData.GridSize), y: (cy-PatternData.GridSize)}));
-				pattern.append(sym[snb].use().attr({x: (cx+PatternData.GridSize), y: (cy-PatternData.GridSize)}));
+					pattern_insert_symbol(symc[snb], (cx+PatternData.GridSize), (cy-PatternData.GridSize), sym_inl);
+				pattern_insert_symbol(sym[snb], (cx+PatternData.GridSize), (cy-PatternData.GridSize), sym_inl);
 			}
 		}
 		else if (cx > PatternData.GridSize-PatternData.DotRadius)
 		{
 			if (symc.length > 0)
-				pattern.append(symc[snb].use().attr({x: (cx-PatternData.GridSize), y: cy}));
-			pattern.append(sym[snb].use().attr({x: (cx-PatternData.GridSize), y: cy}));
+				pattern_insert_symbol(symc[snb], (cx-PatternData.GridSize), cy, sym_inl);
+			pattern_insert_symbol(sym[snb], (cx-PatternData.GridSize), cy, sym_inl);
 			if (cy < PatternData.DotRadius)
 			{
 				if (symc.length > 0)
-					pattern.append(symc[snb].use().attr({x: (cx-PatternData.GridSize), y: (cy+PatternData.GridSize)}));
-				pattern.append(sym[snb].use().attr({x: (cx-PatternData.GridSize), y: (cy+PatternData.GridSize)}));
+					pattern_insert_symbol(symc[snb], (cx-PatternData.GridSize), (cy+PatternData.GridSize), sym_inl);
+				pattern_insert_symbol(sym[snb], (cx-PatternData.GridSize), (cy+PatternData.GridSize), sym_inl);
 			}
 			else if (cy > PatternData.GridSize-PatternData.DotRadius)
 			{
 				if (symc.length > 0)
-					pattern.append(symc[snb].use().attr({x: (cx-PatternData.GridSize), y: (cy-PatternData.GridSize)}));
-				pattern.append(sym[snb].use().attr({x: (cx-PatternData.GridSize), y: (cy-PatternData.GridSize)}));
+					pattern_insert_symbol(symc[snb], (cx-PatternData.GridSize), (cy-PatternData.GridSize), sym_inl);
+				pattern_insert_symbol(sym[snb], (cx-PatternData.GridSize), (cy-PatternData.GridSize), sym_inl);
 			}
 		}
 
 		if (cy < PatternData.DotRadius)
 		{
 			if (symc.length > 0)
-				pattern.append(symc[snb].use().attr({x: cx, y: (cy+PatternData.GridSize)}));
-			pattern.append(sym[snb].use().attr({x: cx, y: (cy+PatternData.GridSize)}));
+				pattern_insert_symbol(symc[snb], cx, (cy+PatternData.GridSize), sym_inl);
+			pattern_insert_symbol(sym[snb], cx, (cy+PatternData.GridSize), sym_inl);
 			if (cx < PatternData.DotRadius)
 			{
 				if (symc.length > 0)
-					pattern.append(symc[snb].use().attr({x: (cx+PatternData.GridSize), y: (cy+PatternData.GridSize)}));
-				pattern.append(sym[snb].use().attr({x: (cx+PatternData.GridSize), y: (cy+PatternData.GridSize)}));
+					pattern_insert_symbol(symc[snb], (cx+PatternData.GridSize), (cy+PatternData.GridSize), sym_inl);
+				pattern_insert_symbol(sym[snb], (cx+PatternData.GridSize), (cy+PatternData.GridSize), sym_inl);
 			}
 			else if (cx > PatternData.GridSize-PatternData.DotRadius)
 			{
 				if (symc.length > 0)
-					pattern.append(symc[snb].use().attr({x: (cx-PatternData.GridSize), y: (cy+PatternData.GridSize)}));
-				pattern.append(sym[snb].use().attr({x: (cx-PatternData.GridSize), y: (cy+PatternData.GridSize)}));
+					pattern_insert_symbol(symc[snb], (cx-PatternData.GridSize), (cy+PatternData.GridSize), sym_inl);
+				pattern_insert_symbol(sym[snb], (cx-PatternData.GridSize), (cy+PatternData.GridSize), sym_inl);
 			}
 		}
 		else if (cy > PatternData.GridSize-PatternData.DotRadius)
 		{
 			if (symc.length > 0)
-				pattern.append(symc[snb].use().attr({x: cx, y: (cy-PatternData.GridSize)}));
-			pattern.append(sym[snb].use().attr({x: cx, y: (cy-PatternData.GridSize)}));
+				pattern_insert_symbol(symc[snb], cx, (cy-PatternData.GridSize), sym_inl);
+			pattern_insert_symbol(sym[snb], cx, (cy-PatternData.GridSize), sym_inl);
 			if (cx < PatternData.DotRadius)
 			{
 				if (symc.length > 0)
-					pattern.append(symc[snb].use().attr({x: (cx+PatternData.GridSize), y: (cy-PatternData.GridSize)}));
-				pattern.append(sym[snb].use().attr({x: (cx+PatternData.GridSize), y: (cy-PatternData.GridSize)}));
+					pattern_insert_symbol(symc[snb], (cx+PatternData.GridSize), (cy-PatternData.GridSize), sym_inl);
+				pattern_insert_symbol(sym[snb], (cx+PatternData.GridSize), (cy-PatternData.GridSize), sym_inl);
 			}
 			else if (cx > PatternData.GridSize-PatternData.DotRadius)
 			{
 				if (symc.length > 0)
-					pattern.append(symc[snb].use().attr({x: (cx-PatternData.GridSize), y: (cy-PatternData.GridSize)}));
-				pattern.append(sym[snb].use().attr({x: (cx-PatternData.GridSize), y: (cy-PatternData.GridSize)}));
+					pattern_insert_symbol(symc[snb], (cx-PatternData.GridSize), (cy-PatternData.GridSize), sym_inl);
+				pattern_insert_symbol(sym[snb], (cx-PatternData.GridSize), (cy-PatternData.GridSize), sym_inl);
 			}
 		}
 	}
@@ -379,7 +404,7 @@ function render_symbol(pattern, sym, symc, px_align)
 // --------------------------------------------------
 // render pattern as SVG
 // --------------------------------------------------
-function render(px_align)
+function render(px_align, sym_inl, rrot, sid, scale, off_x, off_y, casing_width, seed)
 {
 	s.select('defs').selectAll('g').remove();
 	s.select("#Pattern").selectAll('*').remove();
@@ -389,73 +414,94 @@ function render(px_align)
 
 	var rrotate_cnt = 1;
 
-	if ($('#B_rrotate').is(':checked'))
+	if (seed)
+		Math.seedrandom(seed);
+
+	if (rrot)
 		rrotate_cnt = 13;
 
-	if ($("#code_multi").is(':visible'))
+	var custom_svg = false;
+
+	if (sid < 0)
+	{
+		sid = -sid-1;
+		custom_svg = true;
+	}
+
+	if (typeof(SelSyms[sid].svg) !== "string")
 	{
 		var c = 0;
-		for (var i=0; i < code_multi_cnt; i++)
+		for (var i=0; i < SelSyms[sid].svg.length; i++)
 		for (var j=0; j < rrotate_cnt; j++)
 		{
-			if ($("#code"+i).is(':visible'))
-			{
+			if (custom_svg)
 				var f = Snap.parse($('#code'+i).val());
-				sym.push(s.g());
-				sym[c].toDefs();
-				sym[c].append(f);
-				if (j > 0)
-					sym[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+$('#sym_scale').val()+") translate("+(0-$('#offset_x').val())+", "+(0-$('#offset_y').val())+")");
-				else
-					sym[c].transform("scale("+$('#sym_scale').val()+") translate("+(0-$('#offset_x').val())+", "+(0-$('#offset_y').val())+")");
+			else
+				var f = Snap.parse(SelSyms[sid].svg[i]);
+			sym.push(s.g());
+			if (!sym_inl) sym[c].toDefs();
+			sym[c].append(f);
+			if (j > 0)
+				sym[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
+			else
+				sym[c].transform("scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
 
-				if ($('#B_casing').is(':checked'))
-				{
+			if (casing_width > 0)
+			{
+				if (custom_svg)
 					var f2 = Snap.parse($('#code'+i).val());
-					symc.push(s.g());
-					symc[c].attr({stroke: "#ffffff", strokeWidth: CasingWidth/parseFloat($('#sym_scale').val())});
-					symc[c].toDefs();
-					symc[c].append(f2);
-					if (j > 0)
-						symc[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+$('#sym_scale').val()+") translate("+(0-$('#offset_x').val())+", "+(0-$('#offset_y').val())+")");
-					else
-						symc[c].transform("scale("+$('#sym_scale').val()+") translate("+(0-$('#offset_x').val())+", "+(0-$('#offset_y').val())+")");
-				}
-				c++;
+				else
+					var f2 = Snap.parse(SelSyms[sid].svg[i]);
+				symc.push(s.g());
+				symc[c].attr({stroke: "#ffffff", strokeWidth: casing_width/scale, strokeLinecap: "round"});
+				if (!sym_inl) symc[c].toDefs();
+				symc[c].append(f2);
+				if (j > 0)
+					symc[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
+				else
+					symc[c].transform("scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
 			}
+			c++;
 		}
 	}
 	else
 	{
 		for (var j=0; j < rrotate_cnt; j++)
 		{
-			var f = Snap.parse($('#code').val());
+			if (custom_svg)
+				var f = Snap.parse($('#code').val());
+			else
+				var f = Snap.parse(SelSyms[sid].svg);
 			sym.push(s.g());
-			sym[j].toDefs();
+			if (!sym_inl) sym[j].toDefs();
 			sym[j].append(f);
 			if (j > 0)
-				sym[j].transform("rotate("+(j*360/rrotate_cnt)+") scale("+$('#sym_scale').val()+") translate("+(0-$('#offset_x').val())+", "+(0-$('#offset_y').val())+")");
+				sym[j].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_y)+", "+(0-off_y)+")");
 			else
-				sym[j].transform("scale("+$('#sym_scale').val()+") translate("+(0-$('#offset_x').val())+", "+(0-$('#offset_y').val())+")");
+				sym[j].transform("scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
 
-			if ($('#B_casing').is(':checked'))
+			if (casing_width > 0)
 			{
 				var f2 = Snap.parse($('#code').val());
 				symc.push(s.g());
-				symc[j].attr({stroke: "#ffffff", strokeWidth: CasingWidth/parseFloat($('#sym_scale').val())});
-				symc[j].toDefs();
+				symc[j].attr({stroke: "#ffffff", strokeWidth: casing_width/scale, strokeLinecap: "round"});
+				if (!sym_inl) symc[j].toDefs();
 				symc[j].append(f2);
 				if (j > 0)
-					symc[j].transform("rotate("+(j*360/rrotate_cnt)+") scale("+$('#sym_scale').val()+") translate("+(0-$('#offset_x').val())+", "+(0-$('#offset_y').val())+")");
+					symc[j].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
 				else
-					symc[j].transform("scale("+$('#sym_scale').val()+") translate("+(0-$('#offset_x').val())+", "+(0-$('#offset_y').val())+")");
+					symc[j].transform("scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
 			}
 		}
 	}
 
-	var g = s.select("#Pattern");
+	render_symbols(sym, symc, px_align, sym_inl);
 
-	render_symbol(g, sym, symc, px_align);
+	if (sym_inl) 
+	{
+		for (var j=0; j < sym.length; j++) sym[j].remove();
+		for (var j=0; j < symc.length; j++) symc[j].remove();
+	}
 
 	var svg = document.getElementById("Svg");
 	svg.toDataURL("image/svg+xml", {
@@ -491,6 +537,315 @@ function inspect()
 	st.attr({viewBox: [bb.x, bb.y, bb.w, bb.h]});
 	$('#offset_x').val(Math.round(bb.cx));
 	$('#offset_y').val(Math.round(bb.cy));
+	var sz = $('#sym_scale').val();
+	st.attr({width: bb.w*sz, height: bb.h*sz});
+	$('#Svg_Test').css({"margin-left":Math.floor((24-bb.w*sz)/2), "margin-top":Math.floor((24-bb.h*sz)/2)});
+}
+
+
+// --------------------------------------------------
+// command sequence functions
+// --------------------------------------------------
+function command_sequence_reset()
+{
+	cmd_sequence = "";
+	$('#cmd_seq').text("");
+	$('#cmd_seq_link').attr("href", "#");
+}
+
+function command_sequence_add(cmd)
+{
+	// for rendering commands: remove all previous rendering commands
+	if (cmd.substr(0,2) == "rd")
+	{
+		var cmds = cmd_sequence.split(";");
+
+		for (var j=cmds.length-1; j >= 0; j--)
+		{
+			if (cmds[j].substr(0,2) == "rd")
+				cmds.splice(j,1);
+		}
+
+		cmd_sequence = cmds.join(";")+cmd+";";
+	}
+	else
+		cmd_sequence = cmd_sequence+cmd+";";
+
+	$('#cmd_seq').text(cmd_sequence);
+	$('#cmd_seq_link').attr("href", "#"+cmd_sequence);
+}
+
+// --------------------------------------------------
+// command interpreter
+//
+//  calls command_sequence_run recursively when 
+//  called in script mode
+// --------------------------------------------------
+function command(cmd)
+{
+	if (!cmd) return;
+	if (cmd.length == 0) return;
+
+	console.log("command "+cmd);
+
+	var params = cmd.split(",");
+	if (params[0] == "x")
+	{
+		var sz = GridSize;
+		if (params[1])
+			if (params[1].length > 0)
+				sz = parseInt(params[1]);
+
+		Math.seedrandom();
+		var seed = "jdp"+Math.floor(Math.random()*100000);
+		if (params[2])
+			if (params[2].length > 0)
+				seed = params[2];
+
+		if (isNaN(sz)) sz = 256;
+		if (sz != 64) if (sz != 128) if (sz != 256) if (sz != 512) if (sz != 1024) if (sz != 2048) sz = 256;
+
+		command_sequence_reset()
+		command_sequence_add("x,"+sz+","+seed);
+
+		Math.seedrandom(seed);
+
+		reset(sz);
+		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
+		else updateDisplay();
+	}
+	else if (params[0] == "g")
+	{
+		var dot_dist = parseFloat($('#dot_dist').val());
+		if (params[1])
+			if (params[1].length > 0)
+			{
+				dot_dist = parseFloat(params[1]);
+				$('#dot_dist').val(dot_dist);
+			}
+
+		var dot_radius = parseInt($('#dot_radius').val());
+		if (params[2])
+			if (params[2].length > 0)
+			{
+				dot_radius = parseInt(params[2]);
+				$('#dot_radius').val(dot_radius);
+			}
+
+		var dot_radius_y = parseFloat($('#dot_radius_y').val());
+		if (params[3])
+			if (params[3].length > 0)
+			{
+				dot_radius_y = parseFloat(params[3]);
+				$('#dot_radius_y').val(dot_radius_y);
+			}
+
+		if (isNaN(dot_dist)) dot_dist = 20;
+		if (isNaN(dot_radius)) dot_radius = 32;
+		if (isNaN(dot_radius_y)) dot_radius_y = dot_radius;
+
+		command_sequence_add("g,"+dot_dist+","+dot_radius+","+dot_radius_y);
+
+		generatePattern(dot_dist, dot_radius, dot_radius_y);
+
+		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
+		else updateDisplay();
+	}
+	else if (params[0] == "rx")
+	{
+		var steps = 25;
+		if (params[1])
+			if (params[1].length > 0)
+				steps = parseInt(params[1]);
+
+		var metric = $('#metric').val();
+		if (params[2])
+			if (params[2].length > 0)
+			{
+				metric = parseInt(params[2]);
+				$('#metric').val(metric);
+			}
+
+		var dot_radius = parseInt($('#dot_radius').val());
+		if (params[3])
+			if (params[3].length > 0)
+			{
+				dot_radius = parseInt(params[3]);
+				$('#dot_radius').val(dot_radius);
+			}
+
+		var dot_radius_y = parseFloat($('#dot_radius_y').val());
+		if (params[4])
+			if (params[4].length > 0)
+			{
+				dot_radius_y = parseFloat(params[4]);
+				$('#dot_radius_y').val(dot_radius_y);
+			}
+
+		if (isNaN(steps)) steps = 25;
+		if (isNaN(metric)) metric = 2;
+		if (isNaN(dot_radius)) dot_radius = 32;
+		if (isNaN(dot_radius_y)) dot_radius_y = dot_radius;
+
+		if (steps > 500) steps = 500;
+
+		command_sequence_add("rx,"+steps+","+metric+","+dot_radius+","+dot_radius_y);
+
+		PatternData.DotRadius = dot_radius;
+		PatternData.DotRadiusY = dot_radius_y;
+
+		if (typeof window.Worker === "function")
+		{
+			$('#msg').text("relaxing...");
+			worker = new Worker('relax_ww.js');
+			worker.onmessage = function (event) {
+				if (event.data.length > 100)
+				{
+					PatternData = JSON.parse(event.data);
+					$('#msg').text("");
+					if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
+					else updateDisplay();
+				}
+				//else
+				//	console.log(event.data);
+			};
+			worker.postMessage(JSON.stringify({"step":0.02, "metric": metric, "data":PatternData}));
+
+			for (var i=0; i < steps; i++)
+			{
+				worker.postMessage("step");
+			}
+
+			worker.postMessage("stop");
+		}
+		else
+		{
+			for (var i=0; i < steps; i++)
+			{
+				relaxStep(0.02, metric);
+			}
+			if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
+			else updateDisplay();
+		}
+	}
+	else if (params[0] == "s")
+	{
+		Math.seedrandom();
+		var seed = "jdp"+Math.floor(Math.random()*100000);
+		if (params[1])
+			if (params[1].length > 0)
+				seed = params[1];
+
+		command_sequence_add("s,"+seed);
+
+		Math.seedrandom(seed);
+
+		shakePattern(0.3);
+
+		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
+		else updateDisplay();
+	}
+	else if (params[0] == "rd")
+	{
+		var palign = false;
+		if (params[1])
+			if (params[1] != "0") palign = true;
+
+		var sym_inl = false;
+		if (params[2])
+			if (params[2] != "0") sym_inl = true;
+
+		var rrotate = $('#B_rrotate').is(':checked');
+		if (params[3])
+			if (params[3] != "0")
+				rrotate = true;
+
+		var sid = -1-sym_id;
+		if (params[4])
+			if (params[4].length > 0)
+			{
+				for (var i=0; i < SelSyms.length; i++)
+					if (SelSyms[i].name == params[4])
+					{
+						sid = i;
+						break;
+					}
+				if (sid < 0) sid = parseInt(params[4]);
+				$('#sym_selector').slick("slickGoTo", sid);
+				$('#sym_sel_'+sid).click();
+			}
+
+		var scale = parseFloat($('#sym_scale').val());
+		if (params[5])
+			if (params[5].length > 0)
+			{
+				scale = parseFloat(params[5]);
+				$('#sym_scale').val(scale);
+			}
+
+		var off_x = parseFloat($('#offset_x').val());
+		if (params[6])
+			if (params[6].length > 0)
+			{
+				off_x = parseFloat(params[6]);
+				$('#offset_x').val(off_x);
+			}
+
+		var off_y = parseFloat($('#offset_y').val());
+		if (params[7])
+			if (params[7].length > 0)
+			{
+				off_y = parseFloat(params[7]);
+				$('#offset_y').val(off_y);
+			}
+
+		var cwdth = parseFloat($('#casing_width').val());
+		if (params[8])
+			if (params[8].length > 0)
+			{
+				cwdth = parseFloat(params[8]);
+				$('#casing_width').val(cwdth);
+			}
+
+		Math.seedrandom();
+		var seed = "jdp"+Math.floor(Math.random()*100000);
+		if (params[9])
+			if (params[9].length > 0)
+				seed = params[9];
+
+		if (isNaN(scale)) scale = 1.0;
+		if (isNaN(off_x)) off_x = 0.0;
+		if (isNaN(off_y)) off_y = 0.0;
+		if (isNaN(cwdth)) cwdth = 0.0;
+
+		var sym_name = SelSyms[(sid>0?sid:-sid-1)].name;
+
+		command_sequence_add("rd,"+(palign?1:0)+","+(sym_inl?1:0)+","+(rrotate?1:0)+","+sym_name+","+scale+","+off_x+","+off_y+","+cwdth+","+seed);
+
+		Math.seedrandom(seed);
+
+		render(palign, sym_inl, rrotate, sid, scale, off_x, off_y, cwdth, seed);
+
+		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
+		else updateDisplay();
+	}
+}
+
+function command_sequence_run(seq)
+{
+	var cmd = seq.shift();
+	cmd_sequence_run = seq;
+	if (cmd.length > 0)
+	{
+		$('#msg').text("running command '"+cmd+"'...");
+		//console.log("command_sequence_run "+cmd);
+		command(cmd);
+	}
+	else
+	{
+		$('#msg').text("");
+		updateDisplay();
+	}
 }
 
 $(document).ready(function () {
@@ -498,83 +853,23 @@ $(document).ready(function () {
 	if (PatternData.GridSizeS > 0)
 		$('#B_relaxS').show();
 
-	$('#B_generate').click(function() {
-		generatePattern();
-		updateDisplay();
-	});
-
 	$('.sz-switch').click(function() {
     $('.sz-switch').removeClass("active").addClass("inactive");
     $(this).removeClass("inactive").addClass("active");
-    reset(parseInt($(this).attr("id").split("_")[1]));
+		command("x,"+parseInt($(this).attr("id").split("_")[1]));
+	});
+
+	$('#B_generate').click(function() {
+		command("x");
+		command("g");
 	});
 
 	$('#B_relax').click(function() {
-		if (typeof window.Worker === "function")
-		{
-			$('#msg').text("relaxing...");
-			worker = new Worker('relax_ww.js');
-			worker.onmessage = function (event) {
-				if (event.data.length > 100)
-				{
-					PatternData = JSON.parse(event.data);
-					$('#msg').text("");
-					updateDisplay();
-				}
-				//else
-				//	console.log(event.data);
-			};
-			worker.postMessage(JSON.stringify({step:0.02, metric:$('#metric').val(), data:PatternData}));
-
-			for (var i=0; i < 25; i++)
-			{
-				worker.postMessage("step");
-			}
-
-			worker.postMessage("stop");
-		}
-		else
-		{
-			for (var i=0; i < 25; i++)
-			{
-				relaxStep(0.02, parseInt($('#metric').val()));
-			}
-			updateDisplay();
-		}
+		command("rx,25");
 	});
 
 	$('#B_relax10').click(function() {
-		if (typeof window.Worker === "function")
-		{
-			$('#msg').text("relaxing...");
-			worker = new Worker('relax_ww.js');
-			worker.onmessage = function (event) {
-				if (event.data.length > 100)
-				{
-					PatternData = JSON.parse(event.data);
-					$('#msg').text("");
-					updateDisplay();
-				}
-				//else
-				//	console.log(event.data);
-			};
-			worker.postMessage(JSON.stringify({step:0.02, metric:$('#metric').val(), data:PatternData}));
-
-			for (var i=0; i < 250; i++)
-			{
-				worker.postMessage("step");
-			}
-
-			worker.postMessage("stop");
-		}
-		else
-		{
-			for (var i=0; i < 250; i++)
-			{
-				relaxStep(0.02, parseInt($('#metric').val()));
-			}
-			updateDisplay();
-		}
+		command("rx,250");
 	});
 
 	$('#B_relaxS').click(function() {
@@ -586,16 +881,20 @@ $(document).ready(function () {
 	});
 
 	$('#B_shake').click(function() {
-		shakePattern(0.3);
+		command("s");
 		updateDisplay();
 	});
 
 	$('#B_render').click(function() {
-		render(false);
+		command("rd");
 	});
 
 	$('#B_prender').click(function() {
-		render(true);
+		command("rd,1");
+	});
+
+	$('#B_irender').click(function() {
+		command("rd,1,1");
 	});
 
 	$('#B_inspect').click(function() {
@@ -610,41 +909,94 @@ $(document).ready(function () {
 		$('.help').toggle("fast");
 	});
 
-	$('#B_load').click(function() {
-		if (typeof(SelSyms[$("#SelSymbol").val()].svg) === "string")
-		{
-			$("#code").text(SelSyms[$("#SelSymbol").val()].svg);
-			$("#code_single").show();
-			$("#code_multi").hide();			
-		}
-		else
-		{
-			for (var i=0; i < SelSyms[$("#SelSymbol").val()].svg.length; i++)
-			{
-				if (i >= code_multi_cnt)
-				{
-					$("#code_multi").append('<textarea name="code'+i+'" id="code'+i+'" rows="2" cols="80" title="enter SVG code for the symbol here"></textarea>');
-					code_multi_cnt++;
-				}
-				else
-					$("#code"+i).show();
-
-				$("#code"+i).text(SelSyms[$("#SelSymbol").val()].svg[i]);
-				if (i == 0) $("#code").text(SelSyms[$("#SelSymbol").val()].svg[i]);
-			}
-			for (var i=SelSyms[$("#SelSymbol").val()].svg.length; i < code_multi_cnt; i++) $("#code"+i).hide();
-			$("#code_single").hide();
-			$("#code_multi").show();	
-		}
+	$('#B_cmdseq').click(function() {
+		$('.cmdseq').toggle("fast");
 	});
 
 	for (var i=0; i < SelSyms.length; i++)
-		$("#SelSymbol").append("<option value='"+i+"'>"+SelSyms[i].name+"</option>");
+	{
+		if (typeof(SelSyms[i].svg) === "string")
+			$("#sym_selector").append("<div class=\"sym-sel-entry\" id='sym_sel_"+i+"'><div class=\"sym-sel-svg\"><svg id=\"Svg_"+i+"\"></svg></div><div class=\"sym-sel-caption\">"+SelSyms[i].name+"</div></div>");
+		else
+			$("#sym_selector").append("<div class=\"sym-sel-entry\" id='sym_sel_"+i+"'><div class=\"sym-sel-svg\"><svg id=\"Svg_"+i+"\"></svg></div><div class=\"sym-sel-caption\">"+SelSyms[i].name+"&nbsp;<span title=\"multiple symbols\" class=\"sym-multi\">+</span></div></div>");
+	}
 
-	$("#code").text(SelSyms[$("#SelSymbol").val()].svg);
+	$("#code").text(SelSyms[0].svg);
+	$("#sym_sel_0").addClass("sym-active");
+
+	$('#sym_selector').slick({
+		slidesToShow: 5,
+		slidesToScroll: 3
+	});
 
 	reset(GridSize);
 
 	st = Snap("#Svg_Test");
+
+	for (var i=0; i < SelSyms.length; i++)
+	{
+		var svg_preview = Snap("#Svg_"+i);
+		svg_preview.selectAll('*').remove();
+		var sym = svg_preview.g();
+		if (typeof(SelSyms[i].svg) === "string")
+			var se = sym.append(Snap.parse(SelSyms[i].svg));
+		else
+			var se = sym.append(Snap.parse(SelSyms[i].svg[0]));
+		var bb = se.getBBox();
+		svg_preview.attr({viewBox: [bb.x, bb.y, bb.w, bb.h]});
+	}
+
+	$('.sym-sel-entry').click(function() {
+		if ($(this).attr("id"))
+		{
+			sym_id = parseInt($(this).attr("id").split("_")[2]);
+			$('.sym-sel-entry').removeClass("sym-active");
+			$(this).addClass("sym-active");
+
+			if (typeof(SelSyms[sym_id].svg) === "string")
+			{
+				if (PatternData.GridSize > 256)
+				{
+					if (SelSyms[sym_id].svg.length < 600) $("#code").attr({"rows": 9});
+					else $("#code").attr({"rows": 20});
+				}
+				else $("#code").attr({"rows": 9});
+
+				$("#code").text(SelSyms[sym_id].svg);
+				$("#code_single").show();
+				$("#code_multi").hide();
+			}
+			else
+			{
+				for (var i=0; i < SelSyms[sym_id].svg.length; i++)
+				{
+					if (i >= code_multi_cnt)
+					{
+						$("#code_multi").append('<textarea class="svg-code-small" name="code'+i+'" id="code'+i+'" cols="72" rows="2" title="enter SVG code for the symbol here"></textarea>');
+						code_multi_cnt++;
+					}
+					else
+						$("#code"+i).show();
+
+					if (SelSyms[sym_id].svg[i].length < 120) $("#code"+i).attr({"rows": 2});
+					else $("#code"+i).attr({"rows": 4});
+
+					$("#code"+i).text(SelSyms[sym_id].svg[i]);
+					if (i == 0) $("#code").text(SelSyms[sym_id].svg[i]);
+				}
+				for (var i=SelSyms[sym_id].svg.length; i < code_multi_cnt; i++) $("#code"+i).hide();
+				$("#code_single").hide();
+				$("#code_multi").show();
+			}
+		}
+	});
+
+	cmd_sequence = $.url("#");
+
+	if (cmd_sequence.length > 0)
+	{
+		$('.cmdseq').show();
+		command_sequence_run(cmd_sequence.split(";"));
+	}
 
 });
