@@ -12,6 +12,9 @@ use of the following javascript libraries:
 * [JQuery](http://jquery.com/download/)
 * [Snap.svg](http://snapsvg.io/)
 * [SVG.toDataURL()](https://github.com/sampumon/SVG.toDataURL)
+* [slick](http://kenwheeler.github.io/slick/)
+* [seedrandom](https://github.com/davidbau/seedrandom)
+* [url](https://github.com/websanova/js-url)
 
 Licensed under AGPLv3.
 
