@@ -77,7 +77,7 @@ function reset(size)
 // --------------------------------------------------
 // generate randomized grid dot pattern
 // --------------------------------------------------
-function generatePattern(dist, radius, radiusY)
+function generatePattern(dist, radius, radiusY, grid)
 {
 	PatternData.DotDist = dist;
 	PatternData.DotRadius = radius;
@@ -98,17 +98,42 @@ function generatePattern(dist, radius, radiusY)
 	var idx = 0;
 
 	var DotCntL = Math.floor(PatternData.GridSize/PatternData.DotDist);
+	var DotCntL2;
+	if (grid == 3)
+		DotCntL2 = Math.floor(PatternData.GridSize/(PatternData.DotDist*0.5*Math.sqrt(2.0)));
+	else
+		DotCntL2 = DotCntL;
+
 	var DotDistComp = PatternData.GridSize/DotCntL;
+	var DotDistComp2 = PatternData.GridSize/DotCntL2;
+
+	var cx;
+	var cy;
 
 	for (var py=0; py < DotCntL; py++)
-		for (var px=0; px < DotCntL; px++)
+		for (var px=0; px < DotCntL2; px++)
 		{
 			//var cx = Math.random()*PatternData.GridSize;
 			//var cy = Math.random()*PatternData.GridSize;
-			//var cx = (px+0.5)*DotDistComp;
-			//var cy = (py+0.5)*DotDistComp;
-			var cx = (px+0.05+Math.random()*0.9)*DotDistComp;
-			var cy = (py+0.05+Math.random()*0.9)*DotDistComp;
+
+			if (grid == 3)
+			{
+				cx = (px+0.5)*DotDistComp2;
+				if (px%2 == 0)
+					cy = (py+0.25)*DotDistComp;
+				else
+					cy = (py+0.75)*DotDistComp;
+			}
+			else if (grid == 2)
+			{
+				cx = (px+0.5)*DotDistComp2;
+				cy = (py+0.5)*DotDistComp;
+			}
+			else
+			{
+				cx = (px+0.05+Math.random()*0.9)*DotDistComp;
+				cy = (py+0.05+Math.random()*0.9)*DotDistComp;
+			}
 			var ix = Math.floor(cx/PatternData.DotRadius);
 			var iy = Math.floor(cy/PatternData.DotRadius);
 			var DC = new Object();
@@ -614,7 +639,7 @@ function command(cmd)
 		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
 		else updateDisplay();
 	}
-	else if (params[0] == "g")
+	else if ((params[0] == "g") || (params[0] == "gt") || (params[0] == "gs"))
 	{
 		var dot_dist = parseFloat($('#dot_dist').val());
 		if (params[1])
@@ -640,13 +665,17 @@ function command(cmd)
 				$('#dot_radius_y').val(dot_radius_y);
 			}
 
+		var grid = 0;
+		if (params[0] == "gt") grid = 3;
+		else if (params[0] == "gs") grid = 2;
+
 		if (isNaN(dot_dist)) dot_dist = 20;
 		if (isNaN(dot_radius)) dot_radius = 32;
 		if (isNaN(dot_radius_y)) dot_radius_y = dot_radius;
 
-		command_sequence_add("g,"+dot_dist+","+dot_radius+","+dot_radius_y);
+		command_sequence_add(params[0]+","+dot_dist+","+dot_radius+","+dot_radius_y);
 
-		generatePattern(dot_dist, dot_radius, dot_radius_y);
+		generatePattern(dot_dist, dot_radius, dot_radius_y, grid);
 
 		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
 		else updateDisplay();
@@ -862,6 +891,16 @@ $(document).ready(function () {
 	$('#B_generate').click(function() {
 		command("x");
 		command("g");
+	});
+
+	$('#B_generate_triangle').click(function() {
+		command("x");
+		command("gt");
+	});
+
+	$('#B_generate_square').click(function() {
+		command("x");
+		command("gs");
 	});
 
 	$('#B_relax').click(function() {
