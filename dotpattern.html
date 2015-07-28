@@ -80,6 +80,9 @@
 		</table>
 		<div class="dotpattern">
 			<input type="button" name="B_generate" id="B_generate" value="generate" title="generate a new random dot pattern">
+			<input type="button" class="btn-small" name="B_generate_triangle" id="B_generate_triangle" value="‣" title="generate a regular triangular dot pattern">
+			<input type="button" class="btn-small" name="B_generate_triangle2" id="B_generate_triangle2" value="∇" title="generate a regular rotated triangular dot pattern">
+			<input type="button" class="btn-small" name="B_generate_square" id="B_generate_square" value="☐" title="generate a regular square dot pattern">
 			<input type="button" name="B_relaxS" id="B_relaxS" value="relax small area" style="display:none;" title="relax the dot positions in the small topleft area">
 			<input type="button" name="B_relax" id="B_relax" value="relax" title="relax the dot positions to maximize their distance">
 			<input type="button" name="B_relax10" id="B_relax10" value="relax &times;10" title="relax more">
@@ -103,8 +106,6 @@
 
 		</div>
 		<div class="dotpattern cmdseq">
-			<input type="button" name="B_generate_triangle" id="B_generate_triangle" value="gen. t" title="generate a regular triangular dot pattern (experimental)">
-			<input type="button" name="B_generate_square" id="B_generate_square" value="gen. s" title="generate a regular square dot pattern (experimental)">
 			<a id="cmd_seq_link" href="#">command sequence</a>: <span id="cmd_seq"></span><br>
       <span class="alert">command sequence replay does not work with manually entered symbols!</span>
 		</div>
@@ -112,7 +113,8 @@
 			<h3>basic use instructions:</h3>
 			<p>The following buttons are available:</p>
 			<ul>
-				<li><em>generate</em> generates a new random point set.  This should be done before any of the other buttons is used.</li>
+				<li><em>generate</em> generates a new random point set.  This (or the next) should be done before any of the other buttons is used.</li>
+				<li><em>‣/∇/☐</em> generates a new regular grid point set.  The triangular grids are distorted as needed to fit the square pattern.<br>Be aware that the triangular patterns are only truly periodic for certain distance values.</li>
 				<li><em>relax</em> relaxes the point positions by maximizing their distance.</li>
 				<li><em>relax &times;10</em> relaxes ten times.</li>
 				<li><em>shake</em> displaces the points of the current set each by a small random distance.</li>
