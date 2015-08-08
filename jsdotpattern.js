@@ -75,31 +75,49 @@ function reset(size)
 }
 
 // --------------------------------------------------
+// update the pattern radius without resetting the data
+// --------------------------------------------------
+function updateRadius(radius, radiusY)
+{
+	if (radius != PatternData.DotRadius)
+	{
+		PatternData.DotRadius = radius;
+		PatternData.DotRadiusY = radiusY;
+		PatternData.GridCnt = PatternData.GridSize/PatternData.DotRadius;
+		PatternData.GridCntS = PatternData.GridSizeS/PatternData.DotRadius;
+
+		PatternData.DotGrid = new Array(PatternData.GridCnt*PatternData.GridCnt);
+		PatternData.DotGridS = new Array(PatternData.GridCntS*PatternData.GridCntS);
+
+		for (var i=0; i < PatternData.GridCnt*PatternData.GridCnt; i++)
+			PatternData.DotGrid[i] = new Array();
+
+		for (var i=0; i < PatternData.GridCntS*PatternData.GridCntS; i++)
+			PatternData.DotGridS[i] = new Array();
+
+		for (var i=0; i < PatternData.DotCoordinates.length; i++)
+		{
+			var ix = Math.floor(PatternData.DotCoordinates[i].x/PatternData.DotRadius);
+			var iy = Math.floor(PatternData.DotCoordinates[i].y/PatternData.DotRadius);
+			PatternData.DotGrid[iy*PatternData.GridCnt+ix].push(i);
+		}
+	}
+}
+
+// --------------------------------------------------
 // generate randomized grid dot pattern
 // --------------------------------------------------
 function generatePattern(dist, radius, radiusY, grid)
 {
+	PatternData.DotRadius = 0;
 	PatternData.DotDist = dist;
-	PatternData.DotRadius = radius;
-	PatternData.DotRadiusY = radiusY;
-	PatternData.GridCnt = PatternData.GridSize/PatternData.DotRadius;
-	PatternData.GridCntS = PatternData.GridSizeS/PatternData.DotRadius;
-
-	PatternData.DotGrid = new Array(PatternData.GridCnt*PatternData.GridCnt);
-	PatternData.DotGridS = new Array(PatternData.GridCntS*PatternData.GridCntS);
 	PatternData.DotCoordinates = new Array();
-
-	for (var i=0; i < PatternData.GridCnt*PatternData.GridCnt; i++)
-		PatternData.DotGrid[i] = new Array();
-
-	for (var i=0; i < PatternData.GridCntS*PatternData.GridCntS; i++)
-		PatternData.DotGridS[i] = new Array();
 
 	var idx = 0;
 
 	var DotCntL = Math.floor(PatternData.GridSize/PatternData.DotDist);
 	var DotCntL2;
-	if (grid == 3)
+	if ((grid == 3) || (grid == 4))
 		DotCntL2 = Math.floor(PatternData.GridSize/(PatternData.DotDist*0.5*Math.sqrt(2.0)));
 	else
 		DotCntL2 = DotCntL;
@@ -124,6 +142,14 @@ function generatePattern(dist, radius, radiusY, grid)
 				else
 					cy = (py+0.75)*DotDistComp;
 			}
+			else if (grid == 4)
+			{
+				cy = (px+0.5)*DotDistComp2;
+				if (px%2 == 0)
+					cx = (py+0.25)*DotDistComp;
+				else
+					cx = (py+0.75)*DotDistComp;
+			}
 			else if (grid == 2)
 			{
 				cx = (px+0.5)*DotDistComp2;
@@ -134,15 +160,13 @@ function generatePattern(dist, radius, radiusY, grid)
 				cx = (px+0.05+Math.random()*0.9)*DotDistComp;
 				cy = (py+0.05+Math.random()*0.9)*DotDistComp;
 			}
-			var ix = Math.floor(cx/PatternData.DotRadius);
-			var iy = Math.floor(cy/PatternData.DotRadius);
+			var ix = Math.floor(cx/radius);
+			var iy = Math.floor(cy/radius);
 			var DC = new Object();
 			DC.x = cx;
 			DC.y = cy;
-			PatternData.DotGrid[iy*PatternData.GridCnt+ix].push(idx);
 			if ((iy < PatternData.GridCntS) && (ix < PatternData.GridCntS))
 			{
-				PatternData.DotGridS[iy*PatternData.GridCntS+ix].push(idx);
 				DC.type = 1;
 			}
 			else
@@ -152,7 +176,9 @@ function generatePattern(dist, radius, radiusY, grid)
 			PatternData.DotCoordinates.push(DC);
 			idx++;
 		}
-		
+
+	updateRadius(radius, radiusY);
+
 	PatternData.RelaxState = 0;
 }
 
@@ -216,7 +242,7 @@ function relaxStep(step, metric)
 				if (diy2 >= PatternData.GridCnt) diy2 -= PatternData.GridCnt;
 
 				for (var j=0; j < PatternData.DotGrid[diy2*PatternData.GridCnt+dix2].length; j++)
-				if (j != i)
+				if (PatternData.DotGrid[diy2*PatternData.GridCnt+dix2][j] != i)
 				{
 					var ptx2 = PatternData.DotCoordinates[PatternData.DotGrid[diy2*PatternData.GridCnt+dix2][j]].x;
 					var pty2 = PatternData.DotCoordinates[PatternData.DotGrid[diy2*PatternData.GridCnt+dix2][j]].y;
@@ -328,17 +354,139 @@ function pattern_insert_symbol(sym, cx, cy, sym_inl)
 	else s.select("#Pattern").append(sym.use().attr({x: cx, y: cy}));
 }
 
+
+// --------------------------------------------------
+// determine symbold types - randomly and possibly relaxed
+// --------------------------------------------------
+function set_symbol_types(symbol_types, sym_cnt, relax_step_count)
+{
+	var symbol_nsame = new Array(symbol_types.length);
+
+	for (var i = 0; i < symbol_types.length; ++i)
+	{
+		symbol_types[i] = Math.floor(Math.random()*sym_cnt);
+	}
+
+	if (sym_cnt > 1)
+	for (var s=0; s < relax_step_count; s++)
+	{
+		// compute neighbor statistics
+		for (var i=0; i < symbol_types.length; i++)
+		{
+			var ptx = PatternData.DotCoordinates[i].x;
+			var pty = PatternData.DotCoordinates[i].y;
+			var ix = Math.floor(ptx/PatternData.DotRadius);
+			var iy = Math.floor(pty/PatternData.DotRadius);
+			var n = 0;
+			var n_same = 0;
+
+			for (var diy=iy-1; diy <= iy+1; diy++)
+				for (var dix=ix-1; dix <= ix+1; dix++)
+				{
+					var dix2 = dix;
+					var diy2 = diy;
+					if (dix2 < 0) dix2 += PatternData.GridCnt;
+					if (diy2 < 0) diy2 += PatternData.GridCnt;
+					if (dix2 >= PatternData.GridCnt) dix2 -= PatternData.GridCnt;
+					if (diy2 >= PatternData.GridCnt) diy2 -= PatternData.GridCnt;
+
+					for (var j=0; j < PatternData.DotGrid[diy2*PatternData.GridCnt+dix2].length; j++)
+						if (PatternData.DotGrid[diy2*PatternData.GridCnt+dix2][j] != i)
+						{
+							var ptx2 = PatternData.DotCoordinates[PatternData.DotGrid[diy2*PatternData.GridCnt+dix2][j]].x;
+							var pty2 = PatternData.DotCoordinates[PatternData.DotGrid[diy2*PatternData.GridCnt+dix2][j]].y;
+							var dx = ptx-ptx2;
+							var dy = pty-pty2;
+							if (Math.abs(dx) > PatternData.GridSize/2)
+							{
+								if (ptx2 > ptx) ptx2 -= PatternData.GridSize;
+								else ptx2 += PatternData.GridSize;
+								dx = ptx-ptx2;
+							}
+							if (Math.abs(dy) > PatternData.GridSize/2)
+							{
+								if (pty2 > pty) pty2 -= PatternData.GridSize;
+								else pty2 += PatternData.GridSize;
+								dy = pty-pty2;
+							}
+							var d = dx*dx + dy*dy;
+							if ((d > 0.0) && (d < PatternData.DotDist*PatternData.DotDist*1.8))
+							{
+								n++;
+								if (((symbol_types[i] < sym_cnt/2) && (symbol_types[j] < sym_cnt/2)) ||
+								    ((symbol_types[i] >= sym_cnt/2) && (symbol_types[j] >= sym_cnt/2)))
+									n_same++;
+							}
+						}
+				}
+			if (n > 0)
+				symbol_nsame[i] = n_same/n;
+			else
+				symbol_nsame[i] = 0.0;
+
+		}
+
+		var thr = 1.5 + 0.25*s/(relax_step_count-1);
+		var cnts = 0;
+
+		// relax symbol type selections by swapping matching pairs
+		for (var i=0; i < symbol_types.length; i++)
+			if (symbol_nsame[i] > 0)
+				for (var j=symbol_types.length-1; j >= i+1; j--)
+				{
+					if (((symbol_types[i] < sym_cnt/2) && (symbol_types[j] >= sym_cnt/2)) ||
+					    ((symbol_types[i] >= sym_cnt/2) && (symbol_types[j] < sym_cnt/2)))
+						if (symbol_nsame[i]+symbol_nsame[j] > thr)
+						{
+							var buf = symbol_types[i];
+							symbol_types[i] = symbol_types[j];
+							symbol_types[j] = buf;
+							symbol_nsame[i] = -1.0;
+							symbol_nsame[j] = -1.0;
+							cnts++;
+						}
+				}
+
+		console.log("iteration "+s+", symbol type swaps: "+cnts);
+	}
+
+}
+
 // --------------------------------------------------
 // render pattern symbols
 // --------------------------------------------------
-function render_symbols(sym, symc, px_align, sym_inl)
+function render_symbols(sym, symc, px_align, sym_inl, seed)
 {
-	for (var i=0; i < PatternData.DotCoordinates.length; i++)
-	{
-		var cx = PatternData.DotCoordinates[i].x;
-		var cy = PatternData.DotCoordinates[i].y;
+	if (seed)
+		Math.seedrandom(seed);
 
-		var snb = Math.floor(Math.random()*sym.length);
+	// symbol indices
+	var random_symbol = new Array(PatternData.DotCoordinates.length);
+	for (var i = 0; i < random_symbol.length; ++i) random_symbol[i] = i;
+
+	// shuffle symbol order
+	for (var i = PatternData.DotCoordinates.length - 1; i > 0; i--)
+	{
+		var j = Math.floor(Math.random() * (i + 1));
+		var buf = random_symbol[i];
+		random_symbol[i] = random_symbol[j];
+		random_symbol[j] = buf;
+	}
+
+	if (seed)
+		Math.seedrandom(seed);
+
+	// randomized (and possibly relaxed) symbol types
+	var symbol_types = new Array(PatternData.DotCoordinates.length);
+
+	set_symbol_types(symbol_types, sym.length, 0);
+
+	for (var i=0; i < random_symbol.length; i++)
+	{
+		var cx = PatternData.DotCoordinates[random_symbol[i]].x;
+		var cy = PatternData.DotCoordinates[random_symbol[i]].y;
+
+		var snb = symbol_types[i];
 
 		if (px_align)
 		{
@@ -439,9 +587,6 @@ function render(px_align, sym_inl, rrot, sid, scale, off_x, off_y, casing_width,
 
 	var rrotate_cnt = 1;
 
-	if (seed)
-		Math.seedrandom(seed);
-
 	if (rrot)
 		rrotate_cnt = 13;
 
@@ -520,7 +665,7 @@ function render(px_align, sym_inl, rrot, sid, scale, off_x, off_y, casing_width,
 		}
 	}
 
-	render_symbols(sym, symc, px_align, sym_inl);
+	render_symbols(sym, symc, px_align, sym_inl, seed);
 
 	if (sym_inl) 
 	{
@@ -621,6 +766,9 @@ function command(cmd)
 			if (params[1].length > 0)
 				sz = parseInt(params[1]);
 
+		$('.sz-switch').removeClass("active").addClass("inactive");
+		$('#sz_'+sz).removeClass("inactive").addClass("active");
+
 		Math.seedrandom();
 		var seed = "jdp"+Math.floor(Math.random()*100000);
 		if (params[2])
@@ -639,7 +787,7 @@ function command(cmd)
 		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
 		else updateDisplay();
 	}
-	else if ((params[0] == "g") || (params[0] == "gt") || (params[0] == "gs"))
+	else if ((params[0] == "g") || (params[0] == "gt") || (params[0] == "gv") || (params[0] == "gs"))
 	{
 		var dot_dist = parseFloat($('#dot_dist').val());
 		if (params[1])
@@ -667,6 +815,7 @@ function command(cmd)
 
 		var grid = 0;
 		if (params[0] == "gt") grid = 3;
+		else if (params[0] == "gv") grid = 4;
 		else if (params[0] == "gs") grid = 2;
 
 		if (isNaN(dot_dist)) dot_dist = 20;
@@ -720,8 +869,7 @@ function command(cmd)
 
 		command_sequence_add("rx,"+steps+","+metric+","+dot_radius+","+dot_radius_y);
 
-		PatternData.DotRadius = dot_radius;
-		PatternData.DotRadiusY = dot_radius_y;
+		updateRadius(dot_radius, dot_radius_y)
 
 		if (typeof window.Worker === "function")
 		{
@@ -787,7 +935,10 @@ function command(cmd)
 		var rrotate = $('#B_rrotate').is(':checked');
 		if (params[3])
 			if (params[3] != "0")
+			{
 				rrotate = true;
+				$('#B_rrotate').prop('checked', true);
+			}
 
 		var sid = -1-sym_id;
 		if (params[4])
@@ -856,7 +1007,11 @@ function command(cmd)
 		render(palign, sym_inl, rrotate, sid, scale, off_x, off_y, cwdth, seed);
 
 		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
-		else updateDisplay();
+		else
+		{
+			updateDisplay();
+			$('#msg').text("");
+		}
 	}
 }
 
@@ -883,8 +1038,6 @@ $(document).ready(function () {
 		$('#B_relaxS').show();
 
 	$('.sz-switch').click(function() {
-    $('.sz-switch').removeClass("active").addClass("inactive");
-    $(this).removeClass("inactive").addClass("active");
 		command("x,"+parseInt($(this).attr("id").split("_")[1]));
 	});
 
@@ -896,6 +1049,11 @@ $(document).ready(function () {
 	$('#B_generate_triangle').click(function() {
 		command("x");
 		command("gt");
+	});
+
+	$('#B_generate_triangle2').click(function() {
+		command("x");
+		command("gv");
 	});
 
 	$('#B_generate_square').click(function() {
@@ -1035,7 +1193,7 @@ $(document).ready(function () {
 	if (cmd_sequence.length > 0)
 	{
 		$('.cmdseq').show();
-		command_sequence_run(cmd_sequence.split(";"));
+		command_sequence_run(decodeURI(cmd_sequence).split(";"));
 	}
 
 });
