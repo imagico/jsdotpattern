@@ -105,6 +105,27 @@ function updateRadius(radius, radiusY)
 }
 
 // --------------------------------------------------
+// add a point to the pattern
+// --------------------------------------------------
+function addPatternDot(cx, cy, radius)
+{
+	var ix = Math.floor(cx/radius);
+	var iy = Math.floor(cy/radius);
+	var DC = new Object();
+	DC.x = cx;
+	DC.y = cy;
+	if ((iy < PatternData.GridCntS) && (ix < PatternData.GridCntS))
+	{
+		DC.type = 1;
+	}
+	else
+	{
+		DC.type = 2;
+	}
+	PatternData.DotCoordinates.push(DC);
+}
+
+// --------------------------------------------------
 // generate randomized grid dot pattern
 // --------------------------------------------------
 function generatePattern(dist, radius, radiusY, grid)
@@ -112,8 +133,6 @@ function generatePattern(dist, radius, radiusY, grid)
 	PatternData.DotRadius = 0;
 	PatternData.DotDist = dist;
 	PatternData.DotCoordinates = new Array();
-
-	var idx = 0;
 
 	var DotCntL = Math.floor(PatternData.GridSize/PatternData.DotDist);
 	var DotCntL2;
@@ -141,6 +160,7 @@ function generatePattern(dist, radius, radiusY, grid)
 					cy = (py+0.25)*DotDistComp;
 				else
 					cy = (py+0.75)*DotDistComp;
+				addPatternDot(cx, cy, radius);
 			}
 			else if (grid == 4)
 			{
@@ -149,32 +169,36 @@ function generatePattern(dist, radius, radiusY, grid)
 					cx = (py+0.25)*DotDistComp;
 				else
 					cx = (py+0.75)*DotDistComp;
+				addPatternDot(cx, cy, radius);
 			}
 			else if (grid == 2)
 			{
 				cx = (px+0.5)*DotDistComp2;
 				cy = (py+0.5)*DotDistComp;
+				addPatternDot(cx, cy, radius);
+			}
+			else if (grid == 5)
+			{
+				var offset = 1.0-0.5*0.258819045103;
+				cx = (px+offset)*DotDistComp2;
+				cy = (py+offset)*DotDistComp;
+				addPatternDot(cx, cy);
+				cx = (px+offset-0.5)*DotDistComp2;
+				cy = (py+offset-0.5*0.258819045103)*DotDistComp;
+				addPatternDot(cx, cy);
+				cx = (px+offset-0.5*0.258819045103)*DotDistComp2;
+				cy = (py+offset-0.5)*DotDistComp;
+				addPatternDot(cx, cy);
+				cx = (px+offset-1+0.36520324788187813)*DotDistComp2;
+				cy = (py+offset-1+0.36520324788187813)*DotDistComp;
+				addPatternDot(cx, cy, radius);
 			}
 			else
 			{
 				cx = (px+0.05+Math.random()*0.9)*DotDistComp;
 				cy = (py+0.05+Math.random()*0.9)*DotDistComp;
+				addPatternDot(cx, cy, radius);
 			}
-			var ix = Math.floor(cx/radius);
-			var iy = Math.floor(cy/radius);
-			var DC = new Object();
-			DC.x = cx;
-			DC.y = cy;
-			if ((iy < PatternData.GridCntS) && (ix < PatternData.GridCntS))
-			{
-				DC.type = 1;
-			}
-			else
-			{
-				DC.type = 2;
-			}
-			PatternData.DotCoordinates.push(DC);
-			idx++;
 		}
 
 	updateRadius(radius, radiusY);
@@ -577,10 +601,12 @@ function render_symbols(sym, symc, px_align, sym_inl, seed)
 // --------------------------------------------------
 // render pattern as SVG
 // --------------------------------------------------
-function render(px_align, sym_inl, rrot, sid, scale, off_x, off_y, casing_width, seed)
+function render(px_align, sym_inl, rrot, sid, scale, off_x, off_y, casing_width, seed, col_sym, col_bkg)
 {
 	s.select('defs').selectAll('g').remove();
 	s.select("#Pattern").selectAll('*').remove();
+
+	$('.rim').css('background-color',col_bkg);
 
 	var sym = [];
 	var symc = [];
@@ -609,6 +635,8 @@ function render(px_align, sym_inl, rrot, sid, scale, off_x, off_y, casing_width,
 			else
 				var f = Snap.parse(SelSyms[sid].svg[i]);
 			sym.push(s.g());
+			if ((col_sym != "#000000") && (col_sym != "#000"))
+				sym[c].attr({fill: col_sym});
 			if (!sym_inl) sym[c].toDefs();
 			sym[c].append(f);
 			if (j > 0)
@@ -643,6 +671,8 @@ function render(px_align, sym_inl, rrot, sid, scale, off_x, off_y, casing_width,
 			else
 				var f = Snap.parse(SelSyms[sid].svg);
 			sym.push(s.g());
+			if ((col_sym != "#000000") && (col_sym != "#000"))
+				sym[j].attr({fill: col_sym});
 			if (!sym_inl) sym[j].toDefs();
 			sym[j].append(f);
 			if (j > 0)
@@ -787,7 +817,7 @@ function command(cmd)
 		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
 		else updateDisplay();
 	}
-	else if ((params[0] == "g") || (params[0] == "gt") || (params[0] == "gv") || (params[0] == "gs"))
+	else if ((params[0] == "g") || (params[0] == "gt") || (params[0] == "gv") || (params[0] == "gs") || (params[0] == "g5"))
 	{
 		var dot_dist = parseFloat($('#dot_dist').val());
 		if (params[1])
@@ -817,6 +847,7 @@ function command(cmd)
 		if (params[0] == "gt") grid = 3;
 		else if (params[0] == "gv") grid = 4;
 		else if (params[0] == "gs") grid = 2;
+		else if (params[0] == "g5") grid = 5;
 
 		if (isNaN(dot_dist)) dot_dist = 20;
 		if (isNaN(dot_radius)) dot_radius = 32;
@@ -993,18 +1024,34 @@ function command(cmd)
 			if (params[9].length > 0)
 				seed = params[9];
 
+		var col_sym = $('#sym_color').val();
+		if (params[10])
+			if (params[10].length > 0)
+			{
+				col_sym = "#"+params[10];
+				$('#sym_color').val(col_sym);
+			}
+
+		var col_bkg = $('#bkg_color').val();
+		if (params[11])
+			if (params[11].length > 0)
+			{
+				col_bkg = "#"+params[11];
+				$('#bkg_color').val(col_bkg);
+			}
+
 		if (isNaN(scale)) scale = 1.0;
 		if (isNaN(off_x)) off_x = 0.0;
 		if (isNaN(off_y)) off_y = 0.0;
 		if (isNaN(cwdth)) cwdth = 0.0;
 
-		var sym_name = SelSyms[(sid>0?sid:-sid-1)].name;
+		var sym_name = SelSyms[(sid>=0?sid:-sid-1)].name;
 
-		command_sequence_add("rd,"+(palign?1:0)+","+(sym_inl?1:0)+","+(rrotate?1:0)+","+sym_name+","+scale+","+off_x+","+off_y+","+cwdth+","+seed);
+		command_sequence_add("rd,"+(palign?1:0)+","+(sym_inl?1:0)+","+(rrotate?1:0)+","+sym_name+","+scale+","+off_x+","+off_y+","+cwdth+","+seed+","+col_sym.substr(1)+","+col_bkg.substr(1));
 
 		Math.seedrandom(seed);
 
-		render(palign, sym_inl, rrotate, sid, scale, off_x, off_y, cwdth, seed);
+		render(palign, sym_inl, rrotate, sid, scale, off_x, off_y, cwdth, seed, col_sym, col_bkg);
 
 		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
 		else
@@ -1059,6 +1106,11 @@ $(document).ready(function () {
 	$('#B_generate_square').click(function() {
 		command("x");
 		command("gs");
+	});
+
+	$('#B_generate_snub').click(function() {
+		command("x");
+		command("g5");
 	});
 
 	$('#B_relax').click(function() {

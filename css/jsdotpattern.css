@@ -28,6 +28,10 @@
   vertical-align: bottom;
 }
 
+.input-color {
+  height:16px;
+}
+
 .dotpattern {
   font-size: 12px;
 	padding-top:1px;

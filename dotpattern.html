@@ -30,7 +30,9 @@
 		<table class="dotpattern">
 		<tr>
 		<td><strong>dot pattern:</strong></td>
-		<td><strong>rendered symbol pattern:</strong></td>
+		<td><strong>symbol pattern:</strong>
+		<input class="input-color" title="select symbol color for rendered pattern" type='color' id='sym_color' name='sym_color' value='#000000' />
+		<input class="input-color" title="select background color for rendered pattern" type='color' id='bkg_color' name='bkg_color' value='#d0d0d0' /></td>
 		<td><strong>symbol definition:</strong></td>
 		</tr>
 		<tr>
@@ -68,29 +70,42 @@
 			</div>
 		</td>
 		</tr>
-		<tr>
-		<td colspan="3">
-		distance: <input class="nb" type="text" size="2" name="dot_dist" id="dot_dist" value="20" title="average distance of dots"/>
-		radius: <input class="nb" type="text" size="2" name="dot_radius" id="dot_radius" value="32" title="larger than distance, power of two, less than half the pattern size"/>
-		radius y: <input class="nb" type="text" size="2" name="dot_radius_y" id="dot_radius_y" value="32" title="vertical direction radius, not larger than radius, normally identical"/>
-		metric: <input class="nb" type="text" size="2" name="metric" id="metric" value="2" title="metric of distance calculation, normally 2, >100 is assumed to be maximum metric"/>
-		casing: <input class="nb" type="text" size="2" name="casing_width" id="casing_width" value="0" title="width of white casing around individual symbols (0 means no casing)"/>
-		</td>
-		</tr>
 		</table>
+
 		<div class="dotpattern">
-			<input type="button" name="B_generate" id="B_generate" value="generate" title="generate a new random dot pattern">
-			<input type="button" class="btn-small" name="B_generate_triangle" id="B_generate_triangle" value="‣" title="generate a regular triangular dot pattern">
-			<input type="button" class="btn-small" name="B_generate_triangle2" id="B_generate_triangle2" value="∇" title="generate a regular rotated triangular dot pattern">
-			<input type="button" class="btn-small" name="B_generate_square" id="B_generate_square" value="☐" title="generate a regular square dot pattern">
-			<input type="button" name="B_relaxS" id="B_relaxS" value="relax small area" style="display:none;" title="relax the dot positions in the small topleft area">
-			<input type="button" name="B_relax" id="B_relax" value="relax" title="relax the dot positions to maximize their distance">
-			<input type="button" name="B_relax10" id="B_relax10" value="relax &times;10" title="relax more">
-			<input type="button" name="B_shake" id="B_shake" value="shake" title="randomize the pattern a bit">
-			<input type="button" name="B_render" id="B_render" value="render" title="render the symbol from the right in the dot pattern on the left">
-			<input type="button" name="B_prender" id="B_prender" value="render (px aligned)" title="render the symbol from the right in the dot pattern on the left aligned to pixel coordinates">
-			<input type="button" name="B_irender" id="B_irender" value="render (inlined)" title="render the symbol from the right in the dot pattern on the left with inlined geometries aligned to pixel coordinates">
-			<span id="msg"></span>
+			<table>
+			<tr>
+			<td>
+				<fieldset><legend>point generation</legend>
+				distance: <input class="nb" type="text" size="2" name="dot_dist" id="dot_dist" value="20" title="average distance of dots"/>
+				<input type="button" name="B_generate" id="B_generate" value="generate" title="generate a new random dot pattern"><br>
+				<input type="button" class="btn-small" name="B_generate_triangle" id="B_generate_triangle" value="‣" title="generate a regular triangular dot pattern">
+				<input type="button" class="btn-small" name="B_generate_triangle2" id="B_generate_triangle2" value="∇" title="generate a regular rotated triangular dot pattern">
+				<input type="button" class="btn-small" name="B_generate_square" id="B_generate_square" value="☐" title="generate a regular square dot pattern">
+				<input type="button" class="btn-small" name="B_generate_snub" id="B_generate_snub" value="5" title="generate a regular snub square dot pattern">
+				</fieldset>
+			</td>
+			<td>
+				<fieldset><legend>relaxation</legend>
+				radius: <input class="nb" type="text" size="2" name="dot_radius" id="dot_radius" value="32" title="larger than distance, power of two, less than half the pattern size"/>
+				radius y: <input class="nb" type="text" size="2" name="dot_radius_y" id="dot_radius_y" value="32" title="vertical direction radius, not larger than radius, normally identical"/>
+				metric: <input class="nb" type="text" size="2" name="metric" id="metric" value="2" title="metric of distance calculation, normally 2, >100 is assumed to be maximum metric"/><br>
+				<input type="button" name="B_relaxS" id="B_relaxS" value="relax small area" style="display:none;" title="relax the dot positions in the small topleft area">
+				<input type="button" name="B_relax" id="B_relax" value="relax" title="relax the dot positions to maximize their distance">
+				<input type="button" name="B_relax10" id="B_relax10" value="relax &times;10" title="relax more">
+				<input type="button" name="B_shake" id="B_shake" value="shake" title="randomize the pattern a bit">
+				</fieldset>
+			</td>
+			<td>
+				<fieldset><legend>rendering</legend>
+				casing: <input class="nb" type="text" size="2" name="casing_width" id="casing_width" value="0" title="width of white casing around individual symbols (0 means no casing)"/>
+				<input type="button" name="B_prender" id="B_prender" value="render (px aligned)" title="render the symbol from the right in the dot pattern on the left aligned to pixel coordinates"><br>
+				<input type="button" name="B_render" id="B_render" value="render" title="render the symbol from the right in the dot pattern on the left">
+				<input type="button" name="B_irender" id="B_irender" value="render (inlined)" title="render the symbol from the right in the dot pattern on the left with inlined geometries aligned to pixel coordinates">
+				</fieldset>
+			</td>
+			</tr>
+			</table>
 		</div>
 		<div class="dotpattern">
 			<a id="SvgData" target="_blank" href="data:" title="link to the generated SVG for saving">get pattern SVG data</a>
@@ -103,7 +118,7 @@
       <span class="sz-switch active" id="sz_256">256</span> | 
       <span class="sz-switch inactive" id="sz_512">512</span> | 
       <span class="sz-switch inactive" id="sz_1024">1024</span>
-
+		<span id="msg"></span>
 		</div>
 		<div class="dotpattern cmdseq">
 			<a id="cmd_seq_link" href="#">command sequence</a>: <span id="cmd_seq"></span><br>
