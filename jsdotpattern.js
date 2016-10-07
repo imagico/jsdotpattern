@@ -107,21 +107,12 @@ function updateRadius(radius, radiusY)
 // --------------------------------------------------
 // add a point to the pattern
 // --------------------------------------------------
-function addPatternDot(cx, cy, radius)
+function addPatternDot(cx, cy)
 {
-	var ix = Math.floor(cx/radius);
-	var iy = Math.floor(cy/radius);
 	var DC = new Object();
 	DC.x = cx;
 	DC.y = cy;
-	if ((iy < PatternData.GridCntS) && (ix < PatternData.GridCntS))
-	{
-		DC.type = 1;
-	}
-	else
-	{
-		DC.type = 2;
-	}
+	DC.type = 2;
 	PatternData.DotCoordinates.push(DC);
 }
 
@@ -160,7 +151,7 @@ function generatePattern(dist, radius, radiusY, grid)
 					cy = (py+0.25)*DotDistComp;
 				else
 					cy = (py+0.75)*DotDistComp;
-				addPatternDot(cx, cy, radius);
+				addPatternDot(cx, cy);
 			}
 			else if (grid == 4)
 			{
@@ -169,13 +160,13 @@ function generatePattern(dist, radius, radiusY, grid)
 					cx = (py+0.25)*DotDistComp;
 				else
 					cx = (py+0.75)*DotDistComp;
-				addPatternDot(cx, cy, radius);
+				addPatternDot(cx, cy);
 			}
 			else if (grid == 2)
 			{
 				cx = (px+0.5)*DotDistComp2;
 				cy = (py+0.5)*DotDistComp;
-				addPatternDot(cx, cy, radius);
+				addPatternDot(cx, cy);
 			}
 			else if (grid == 5)
 			{
@@ -191,13 +182,13 @@ function generatePattern(dist, radius, radiusY, grid)
 				addPatternDot(cx, cy);
 				cx = (px+offset-1+0.36520324788187813)*DotDistComp2;
 				cy = (py+offset-1+0.36520324788187813)*DotDistComp;
-				addPatternDot(cx, cy, radius);
+				addPatternDot(cx, cy);
 			}
 			else
 			{
 				cx = (px+0.05+Math.random()*0.9)*DotDistComp;
 				cy = (py+0.05+Math.random()*0.9)*DotDistComp;
-				addPatternDot(cx, cy, radius);
+				addPatternDot(cx, cy);
 			}
 		}
 
@@ -211,6 +202,9 @@ function generatePattern(dist, radius, radiusY, grid)
 // --------------------------------------------------
 function shakePattern(strength)
 {
+	for (var i=0; i < PatternData.GridCnt*PatternData.GridCnt; i++)
+		PatternData.DotGrid[i] = new Array();
+
 	for (var i=0; i < PatternData.DotCoordinates.length; i++)
 	{
 		var dx = (Math.random()-0.5)*strength*PatternData.DotDist;
@@ -226,6 +220,66 @@ function shakePattern(strength)
 		var ix = Math.floor(PatternData.DotCoordinates[i].x/PatternData.DotRadius);
 		var iy = Math.floor(PatternData.DotCoordinates[i].y/PatternData.DotRadius);
 		PatternData.DotGrid[iy*PatternData.GridCnt+ix].push(i);
+	}
+}
+
+// --------------------------------------------------
+// swap pattern x and y coordinates
+// --------------------------------------------------
+function swapPattern()
+{
+	for (var i=0; i < PatternData.GridCnt*PatternData.GridCnt; i++)
+		PatternData.DotGrid[i] = new Array();
+
+	for (var i=0; i < PatternData.DotCoordinates.length; i++)
+	{
+		var buf = PatternData.DotCoordinates[i].x;
+		PatternData.DotCoordinates[i].x = PatternData.DotCoordinates[i].y;
+		PatternData.DotCoordinates[i].y = buf;
+
+		var ix = Math.floor(PatternData.DotCoordinates[i].x/PatternData.DotRadius);
+		var iy = Math.floor(PatternData.DotCoordinates[i].y/PatternData.DotRadius);
+		PatternData.DotGrid[iy*PatternData.GridCnt+ix].push(i);
+	}
+}
+
+// --------------------------------------------------
+// rotate the current pattern by 45 degrees and scale to fit
+// --------------------------------------------------
+function rotate45Pattern()
+{
+	for (var i=0; i < PatternData.GridCnt*PatternData.GridCnt; i++)
+		PatternData.DotGrid[i] = new Array();
+	
+	var coords_old = PatternData.DotCoordinates;
+	PatternData.DotCoordinates = new Array();
+
+	var n = 0;
+
+	for (var i=0; i < coords_old.length; i++)
+	{
+		for (var dy=-1.0; dy <= 1.0; dy++)
+			for (var dx=-1.0; dx <= 1.0; dx++)
+			{
+				var ox = (coords_old[i].x + PatternData.GridSize*(dx-0.5))/Math.sqrt(2.0);
+				var oy = (coords_old[i].y + PatternData.GridSize*(dy-0.5))/Math.sqrt(2.0);
+
+				// tiny tolerance added to handle rounding errors
+				var cx = (ox/Math.sqrt(2.0) + oy/Math.sqrt(2.0)) + PatternData.GridSize*0.5001;
+				var cy = (-ox/Math.sqrt(2.0) + oy/Math.sqrt(2.0)) + PatternData.GridSize*0.5001;
+		
+				if (cx < 0) continue;
+				if (cy < 0) continue;
+				if (cx >= PatternData.GridSize) continue;
+				if (cy >= PatternData.GridSize) continue;
+
+				addPatternDot(cx, cy);
+
+				var ix = Math.floor(cx/PatternData.DotRadius);
+				var iy = Math.floor(cy/PatternData.DotRadius);
+				PatternData.DotGrid[iy*PatternData.GridCnt+ix].push(n);
+				n += 1;
+			}
 	}
 }
 
@@ -768,6 +822,20 @@ function command_sequence_add(cmd)
 
 		cmd_sequence = cmds.join(";")+cmd+";";
 	}
+	// for swap: possibly cancel with previous swap
+	else if (cmd.substr(0,2) == "ts")
+	{
+		var cmds = cmd_sequence.split(";");
+
+		if (cmds[cmds.length-2].substr(0,2) == "ts")
+		{
+			cmds.pop();
+			cmds.pop();
+			cmd_sequence = cmds.join(";")+";";
+		}
+		else
+			cmd_sequence = cmd_sequence+cmd+";";
+	}
 	else
 		cmd_sequence = cmd_sequence+cmd+";";
 
@@ -953,6 +1021,24 @@ function command(cmd)
 		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
 		else updateDisplay();
 	}
+	else if (params[0] == "tr")
+	{
+		command_sequence_add("tr");
+
+		rotate45Pattern();
+
+		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
+		else updateDisplay();
+	}
+	else if (params[0] == "ts")
+	{
+		command_sequence_add("ts");
+
+		swapPattern();
+
+		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
+		else updateDisplay();
+	}
 	else if (params[0] == "rd")
 	{
 		var palign = false;
@@ -1028,7 +1114,7 @@ function command(cmd)
 		if (params[10])
 			if (params[10].length > 0)
 			{
-				col_sym = "#"+params[10];
+				col_sym = "#"+params[10].substr(0,6);
 				$('#sym_color').val(col_sym);
 			}
 
@@ -1036,7 +1122,7 @@ function command(cmd)
 		if (params[11])
 			if (params[11].length > 0)
 			{
-				col_bkg = "#"+params[11];
+				col_bkg = "#"+params[11].substr(0,6);
 				$('#bkg_color').val(col_bkg);
 			}
 
@@ -1126,12 +1212,18 @@ $(document).ready(function () {
 		{
 			relaxStepS(0.02, parseInt($('#metric').val()));
 		}
-		updateDisplay();
 	});
 
 	$('#B_shake').click(function() {
 		command("s");
-		updateDisplay();
+	});
+
+	$('#B_rotate').click(function() {
+		command("tr");
+	});
+
+	$('#B_swap').click(function() {
+		command("ts");
 	});
 
 	$('#B_render').click(function() {
