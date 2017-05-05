@@ -428,10 +428,15 @@ function updateDisplay()
 // --------------------------------------------------
 function pattern_insert_symbol(sym, cx, cy, sym_inl)
 {
-	if (sym_inl) s.select("#Pattern").append(sym.clone().transform("translate("+cx+", "+cy+")"));
+	if (sym_inl)
+	{
+		var sym2 = s.g();
+		sym2.append(sym.clone());    
+		sym2.transform("translate("+cx+", "+cy+")");
+		s.select("#Pattern").append(sym2);
+	}
 	else s.select("#Pattern").append(sym.use().attr({x: cx, y: cy}));
 }
-
 
 // --------------------------------------------------
 // determine symbold types - randomly and possibly relaxed
@@ -1235,6 +1240,10 @@ $(document).ready(function () {
 	});
 
 	$('#B_irender').click(function() {
+		command("rd,0,1");
+	});
+
+	$('#B_iprender').click(function() {
 		command("rd,1,1");
 	});
 
