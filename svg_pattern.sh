@@ -6,6 +6,7 @@
 SRC="$1"
 TARGET="$2"
 CLIP="$3"
+NOCLIP=
 
 if [ -z "$1" ] || [ -z "$2" ] ; then
 	echo "Usage: $0 <input> <output> [clip_width]"
@@ -22,6 +23,7 @@ fi
 
 if [ -z "$CLIP" ] ; then
 	CLIP="$SIZE"
+	NOCLIP=on
 fi
 
 cp "$SRC" "$TARGET"
@@ -39,8 +41,11 @@ if grep "<use" "$TARGET" > /dev/null ; then
 			--verb FileQuit "$TARGET"
 
 else # this is for inline SVGs
-	echo "processing inlined SVG..."
-	inkscape -g --verb EditSelectAll --verb SelectionUnGroup \
+	# if clip is specified check for nested groups or transforms
+	# to see if this is necessary (or has been performed before)
+	if [ ! -z "$NOCLIP" ] || grep "</g></g></g>" "$TARGET" > /dev/null || grep "<g transform=" "$TARGET" > /dev/null ; then
+		echo "processing inlined SVG..."
+		inkscape -g --verb EditSelectAll --verb SelectionUnGroup \
 			--verb EditSelectAll --verb SelectionUnGroup \
 			--verb EditSelectAll --verb SelectionUnGroup \
 			--verb EditSelectAll --verb SelectionUnGroup \
@@ -48,7 +53,9 @@ else # this is for inline SVGs
 			--verb EditSelectAll --verb SelectionCombine \
 			--verb FileSave --verb FileClose \
 			--verb FileQuit "$TARGET"
-
+	else
+		echo "only clipping SVG since it seems to be sanitized already..."
+	fi
 fi
 
 # this is pretty whacky since it depends on the specific structure of the file (specifically the presence of a <desc> tag at the very end)
@@ -57,6 +64,9 @@ sed -i -e "s?<desc?<rect width=\"$SIZE\" height=\"$CLIP\" rx=\"0\" x=\"0\" y=\"0
 inkscape -g --verb EditSelectAll --verb SelectionIntersect \
 		--verb FileSave --verb FileClose \
 		--verb FileQuit "$TARGET"
+
+# and now we add this again as a workaround for Mapnik's senseless auto-centering
+sed -i -e "s?<desc?<rect width=\"$SIZE\" height=\"$CLIP\" rx=\"0\" x=\"0\" y=\"0\" id=\"rect8566\" style=\"fill:none;fill-opacity:1;stroke:none\" /><desc?" "$TARGET"
 
 inkscape -z --vacuum-defs -l "$TARGET" -f "$TARGET"
 
