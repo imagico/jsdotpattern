@@ -128,12 +128,22 @@ function generatePattern(dist, radius, radiusY, grid)
 	var DotCntL = Math.floor(PatternData.GridSize/PatternData.DotDist);
 	var DotCntL2;
 	if ((grid == 3) || (grid == 4))
-		DotCntL2 = Math.floor(PatternData.GridSize/(PatternData.DotDist*0.5*Math.sqrt(2.0)));
+	{
+		DotCntL2 = Math.floor(PatternData.GridSize/(PatternData.DotDist*0.5*Math.sqrt(3.0)));
+
+		if ((DotCntL2 % 2) > 0)
+		{
+			DotCntL2 = DotCntL2 + 1;
+		}
+
+	}
 	else
 		DotCntL2 = DotCntL;
 
 	var DotDistComp = PatternData.GridSize/DotCntL;
 	var DotDistComp2 = PatternData.GridSize/DotCntL2;
+
+	$('#msg').text("aspect ratio mismatch: "+((DotDistComp/DotDistComp2)*(0.5*Math.sqrt(3.0))-1.0));
 
 	var cx;
 	var cy;
