@@ -3,19 +3,20 @@
 #    assembles svg code from symbol files into json
 # ------------------------------------------------------------
 
-SYMBOLS="forest bforest scrub scrub2 grass grass_tall dot dash dash_thin pixel vpixel tree_s1 tree_s2 tree_a1 tree_a2 tree_as1 tree_as2 tree tree2 mangrove trees1 trees2 trees3 trees4 trees5 tree_pair marsh reed bog scree rock wood wood_s wood1 wood2 wood2a quarry1 quarry2 hilal1 hilal2 cross1 cross2 star_of_david1 star_of_david2 star_of_david3 grave"
+SYMBOLS=
+#SYMBOLS=" forest bforest scrub scrub2 grass grass_tall dot dash dash_thin pixel vpixel tree_s1 tree_s2 tree_a1 tree_a2 tree_as1 tree_as2 tree tree2 mangrove trees1 trees2 trees3 trees4 trees5 tree_pair marsh reed bog scree rock wood wood_s wood1 wood2 wood2a quarry1 quarry2 hilal1 hilal2 cross1 cross2 star_of_david1 star_of_david2 star_of_david3 grave "
 
 for SYM in `find "symbols" -maxdepth 1 -name "*.svg" | sort` ; do
 	SYM_NAME=`basename $SYM .svg`
-	if ! echo "$SYMBOLS" | grep "$SYM_NAME" > /dev/null ; then
-		SYMBOLS="$SYMBOLS $SYM_NAME"
+	if ! echo "$SYMBOLS" | grep " $SYM_NAME " > /dev/null ; then
+		SYMBOLS="$SYMBOLS$SYM_NAME "
 	fi
 done
 
 for SYM in `find "symbols" -mindepth 1 -type d | sort` ; do
 	SYM_NAME=`basename $SYM`
-	if ! echo "$SYMBOLS" | grep "$SYM_NAME" > /dev/null ; then
-		SYMBOLS="$SYMBOLS $SYM_NAME"
+	if ! echo "$SYMBOLS" | grep " $SYM_NAME " > /dev/null ; then
+		SYMBOLS="$SYMBOLS$SYM_NAME "
 	fi
 done
 

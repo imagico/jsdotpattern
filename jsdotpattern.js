@@ -15,6 +15,10 @@ var sym_id = 0;
 var cmd_sequence = "";
 var cmd_sequence_run = [];
 
+var symbols_current = [];
+
+var SelSymsOffsets = [];
+
 var PatternData = 
 {
 	GridSize: GridSize,
@@ -67,11 +71,11 @@ function reset(size)
 		s.select('defs').select('*').remove();
 		s.select('defs').append(Snap.parse("<clipPath id=\"clipPath\"><rect x=\"0\" y=\"0\" width=\""+size+"\" height=\""+size+"\" /></clipPath>"));
 	}
-	
+
 	if (size <= 256)
-		$("#code_multi").css("height", "122px");
+		$("#sym_selector_box").css("height", "208px");
 	else
-		$("#code_multi").css("height", "320px");
+		$("#sym_selector_box").css("height", "462px");
 }
 
 // --------------------------------------------------
@@ -670,7 +674,7 @@ function render_symbols(sym, symc, px_align, sym_inl, seed)
 // --------------------------------------------------
 // render pattern as SVG
 // --------------------------------------------------
-function render(px_align, sym_inl, rrot, sid, scale, off_x, off_y, casing_width, seed, col_sym, col_bkg)
+function render(px_align, sym_inl, rrot, symbol_names, scale, off_x, off_y, casing_width, seed, col_sym, col_bkg)
 {
 	s.select('defs').selectAll('g').remove();
 	s.select("#Pattern").selectAll('*').remove();
@@ -685,88 +689,94 @@ function render(px_align, sym_inl, rrot, sid, scale, off_x, off_y, casing_width,
 	if (rrot)
 		rrotate_cnt = 13;
 
-	var custom_svg = false;
+	if (symbol_names == "custom")
+		SelSyms[SelSyms.length-1].svg = $("#code").val();
 
-	if (sid < 0)
-	{
-		sid = -sid-1;
-		custom_svg = true;
-	}
+	var syms = symbol_names.split("+");
 
-	if (typeof(SelSyms[sid].svg) !== "string")
 	{
 		var c = 0;
-		for (var i=0; i < SelSyms[sid].svg.length; i++)
+		for (var i=0; i < syms.length; i++)
 		for (var j=0; j < rrotate_cnt; j++)
 		{
-			if (custom_svg)
-				var f = Snap.parse($('#code'+i).val());
-			else
-				var f = Snap.parse(SelSyms[sid].svg[i]);
-			sym.push(s.g());
-			if ((col_sym != "#000000") && (col_sym != "#000"))
-				sym[c].attr({fill: col_sym});
-			if (!sym_inl) sym[c].toDefs();
-			sym[c].append(f);
-			if (j > 0)
-				sym[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
-			else
-				sym[c].transform("scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
+			var sid = 0;
+			for (var k=0; k < SelSyms.length; k++)
+				if (SelSyms[k].name == syms[i])
+				{
+					sid = k;
+					break;
+				}
 
-			if (casing_width > 0)
+			var off_xs = off_x;
+			var off_ys = off_y;
+			if (off_x == "auto") off_xs = SelSymsOffsets[sid].x;
+			if (off_y == "auto") off_ys = SelSymsOffsets[sid].y;
+
+			if (typeof(SelSyms[sid].svg) !== "string")
 			{
-				if (custom_svg)
-					var f2 = Snap.parse($('#code'+i).val());
-				else
-					var f2 = Snap.parse(SelSyms[sid].svg[i]);
-				symc.push(s.g());
-				symc[c].attr({stroke: "#ffffff", strokeWidth: casing_width/scale, strokeLinecap: "round"});
-				if (!sym_inl) symc[c].toDefs();
-				symc[c].append(f2);
-				if (j > 0)
-					symc[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
-				else
-					symc[c].transform("scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
+				for (var k=0; k < SelSyms[sid].svg.length; k++)
+				{
+					var f = Snap.parse(SelSyms[sid].svg[k]);
+
+					sym.push(s.g());
+					if ((col_sym != "#000000") && (col_sym != "#000"))
+						sym[c].attr({fill: col_sym});
+					if (!sym_inl) sym[c].toDefs();
+					sym[c].append(f);
+					if (j > 0)
+						sym[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
+					else
+						sym[c].transform("scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
+
+					if (casing_width > 0)
+					{
+						var f2 = Snap.parse(SelSyms[sid].svg[k]);
+						symc.push(s.g());
+						symc[c].attr({stroke: "#ffffff", strokeWidth: casing_width/scale, strokeLinecap: "round"});
+						if (!sym_inl) symc[c].toDefs();
+						symc[c].append(f2);
+						if (j > 0)
+							symc[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
+						else
+							symc[c].transform("scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
+					}
+					c++;
+				}
 			}
-			c++;
-		}
-	}
-	else
-	{
-		for (var j=0; j < rrotate_cnt; j++)
-		{
-			if (custom_svg)
-				var f = Snap.parse($('#code').val());
 			else
-				var f = Snap.parse(SelSyms[sid].svg);
-			sym.push(s.g());
-			if ((col_sym != "#000000") && (col_sym != "#000"))
-				sym[j].attr({fill: col_sym});
-			if (!sym_inl) sym[j].toDefs();
-			sym[j].append(f);
-			if (j > 0)
-				sym[j].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_y)+", "+(0-off_y)+")");
-			else
-				sym[j].transform("scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
-
-			if (casing_width > 0)
 			{
-				var f2 = Snap.parse($('#code').val());
-				symc.push(s.g());
-				symc[j].attr({stroke: "#ffffff", strokeWidth: casing_width/scale, strokeLinecap: "round"});
-				if (!sym_inl) symc[j].toDefs();
-				symc[j].append(f2);
+				var f = Snap.parse(SelSyms[sid].svg);
+
+				sym.push(s.g());
+				if ((col_sym != "#000000") && (col_sym != "#000"))
+					sym[c].attr({fill: col_sym});
+				if (!sym_inl) sym[c].toDefs();
+				sym[c].append(f);
 				if (j > 0)
-					symc[j].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
+					sym[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
 				else
-					symc[j].transform("scale("+scale+") translate("+(0-off_x)+", "+(0-off_y)+")");
+					sym[c].transform("scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
+
+				if (casing_width > 0)
+				{
+					var f2 = Snap.parse(SelSyms[sid].svg[k]);
+					symc.push(s.g());
+					symc[c].attr({stroke: "#ffffff", strokeWidth: casing_width/scale, strokeLinecap: "round"});
+					if (!sym_inl) symc[c].toDefs();
+					symc[c].append(f2);
+					if (j > 0)
+						symc[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
+					else
+						symc[c].transform("scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
+				}
+				c++;
 			}
 		}
 	}
 
 	render_symbols(sym, symc, px_align, sym_inl, seed);
 
-	if (sym_inl) 
+	if (sym_inl)
 	{
 		for (var j=0; j < sym.length; j++) sym[j].remove();
 		for (var j=0; j < symc.length; j++) symc[j].remove();
@@ -799,16 +809,37 @@ function point_list()
 // --------------------------------------------------
 function inspect()
 {
+	if (symbols_current == "custom")
+		SelSyms[SelSyms.length-1].svg = $("#code").val();
+
+	var syms = symbols_current.split("+");
+
+	var sid = 0;
+	for (var k=0; k < SelSyms.length; k++)
+		if (SelSyms[k].name == syms[0])
+		{
+			sid = k;
+			break;
+		}
+
 	st.selectAll('*').remove();
 	var sym = st.g();
-	var se = sym.append(Snap.parse($('#code').val()));
+	var se;
+	if (typeof(SelSyms[sid].svg) === "string")
+		se = sym.append(Snap.parse(SelSyms[sid].svg));
+	else
+		se = sym.append(Snap.parse(SelSyms[sid].svg[0]));
 	var bb = se.getBBox();
-	st.attr({viewBox: [bb.x, bb.y, bb.w, bb.h]});
+	var xs = Math.floor(bb.x);
+	var ys = Math.floor(bb.y);
+	var w = Math.ceil(bb.x+bb.w)-Math.floor(bb.x);
+	var h = Math.ceil(bb.y+bb.h)-Math.floor(bb.y);
+	st.attr({viewBox: [xs, ys, w, h]});
 	$('#offset_x').val(Math.round(bb.cx));
 	$('#offset_y').val(Math.round(bb.cy));
 	var sz = $('#sym_scale').val();
-	st.attr({width: bb.w*sz, height: bb.h*sz});
-	$('#Svg_Test').css({"margin-left":Math.floor((24-bb.w*sz)/2), "margin-top":Math.floor((24-bb.h*sz)/2)});
+	st.attr({width: w*sz, height: h*sz});
+	$('#Svg_Test').css({"margin-left":(12-Math.floor(0.5*w*sz)), "margin-top":(12-Math.floor(0.5*h*sz))});
 }
 
 
@@ -1076,15 +1107,26 @@ function command(cmd)
 		if (params[4])
 			if (params[4].length > 0)
 			{
-				for (var i=0; i < SelSyms.length; i++)
-					if (SelSyms[i].name == params[4])
-					{
-						sid = i;
-						break;
-					}
-				if (sid < 0) sid = parseInt(params[4]);
-				$('#sym_selector').slick("slickGoTo", sid);
-				$('#sym_sel_'+sid).click();
+				symbols_current = params[4];
+				var syms = symbols_current.split("+");
+
+				$('.sym-switch-use').removeClass("active").addClass("inactive");
+				$('.sym-switch-add').removeClass("active").addClass("inactive");
+
+				for (var j=0; j < syms.length; j++)
+					for (var i=0; i < SelSyms.length; i++)
+						if (SelSyms[i].name == syms[j])
+						{
+							$('#sym_sel_add_'+i).removeClass("inactive").addClass("active");
+							sid = i;
+							break;
+						}
+
+				if (sid < 0)
+				{
+					sid = parseInt(params[4]);
+					$('#sym_sel_use'+sid).click();
+				}
 			}
 
 		var scale = parseFloat($('#sym_scale').val());
@@ -1095,19 +1137,33 @@ function command(cmd)
 				$('#sym_scale').val(scale);
 			}
 
-		var off_x = parseFloat($('#offset_x').val());
+		var off_x;
+		if ($('#offset_x').val() == "auto")
+			off_x = "auto";
+		else
+			off_x = parseFloat($('#offset_x').val());
 		if (params[6])
 			if (params[6].length > 0)
 			{
-				off_x = parseFloat(params[6]);
+				if (params[6] == "auto")
+					off_x = "auto";
+				else
+					off_x = parseFloat(params[6]);
 				$('#offset_x').val(off_x);
 			}
 
-		var off_y = parseFloat($('#offset_y').val());
+		var off_y;
+		if ($('#offset_y').val() == "auto")
+			off_y = "auto";
+		else
+			off_y = parseFloat($('#offset_y').val());
 		if (params[7])
 			if (params[7].length > 0)
 			{
-				off_y = parseFloat(params[7]);
+				if (params[7] == "auto")
+					off_y = "auto";
+				else
+					off_y = parseFloat(params[7]);
 				$('#offset_y').val(off_y);
 			}
 
@@ -1142,17 +1198,15 @@ function command(cmd)
 			}
 
 		if (isNaN(scale)) scale = 1.0;
-		if (isNaN(off_x)) off_x = 0.0;
-		if (isNaN(off_y)) off_y = 0.0;
+		if (off_x != "auto") if (isNaN(off_x)) off_x = 0.0;
+		if (off_y != "auto") if (isNaN(off_y)) off_y = 0.0;
 		if (isNaN(cwdth)) cwdth = 0.0;
 
-		var sym_name = SelSyms[(sid>=0?sid:-sid-1)].name;
-
-		command_sequence_add("rd,"+(palign?1:0)+","+(sym_inl?1:0)+","+(rrotate?1:0)+","+sym_name+","+scale+","+off_x+","+off_y+","+cwdth+","+seed+","+col_sym.substr(1)+","+col_bkg.substr(1));
+		command_sequence_add("rd,"+(palign?1:0)+","+(sym_inl?1:0)+","+(rrotate?1:0)+","+symbols_current+","+scale+","+off_x+","+off_y+","+cwdth+","+seed+","+col_sym.substr(1)+","+col_bkg.substr(1));
 
 		Math.seedrandom(seed);
 
-		render(palign, sym_inl, rrotate, sid, scale, off_x, off_y, cwdth, seed, col_sym, col_bkg);
+		render(palign, sym_inl, rrotate, symbols_current, scale, off_x, off_y, cwdth, seed, col_sym, col_bkg);
 
 		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
 		else
@@ -1276,18 +1330,39 @@ $(document).ready(function () {
 	for (var i=0; i < SelSyms.length; i++)
 	{
 		if (typeof(SelSyms[i].svg) === "string")
-			$("#sym_selector").append("<div class=\"sym-sel-entry\" id='sym_sel_"+i+"'><div class=\"sym-sel-svg\"><svg id=\"Svg_"+i+"\"></svg></div><div class=\"sym-sel-caption\">"+SelSyms[i].name+"</div></div>");
+			$("#sym_selector").append("<div class=\"sym-sel-entry\" id='sym_sel_"+i+"'>"+
+			"<span class=\"sym-sel-caption\">"+SelSyms[i].name+"</span> "+
+			"<span class=\"sym-switch-use inactive\" id='sym_sel_use_"+i+"' title=\"use this symbol to render the pattern\">use</span> "+
+			"<span class=\"sym-switch-add inactive\" id='sym_sel_add_"+i+"' title=\"add/remove this symbol on symbol list to render the pattern\">+</span>"+
+			"<span class=\"sym-sel-svg\"><span class=\"sym-sel-svg-wrapper\"><svg id=\"Svg_"+i+"\"></svg></span></span></div>");
 		else
-			$("#sym_selector").append("<div class=\"sym-sel-entry\" id='sym_sel_"+i+"'><div class=\"sym-sel-svg\"><svg id=\"Svg_"+i+"\"></svg></div><div class=\"sym-sel-caption\">"+SelSyms[i].name+"&nbsp;<span title=\"multiple symbols\" class=\"sym-multi\">+</span></div></div>");
+		{
+			var sym_entry = "<div class=\"sym-sel-entry\" id='sym_sel_"+i+"'>"+
+			"<span class=\"sym-sel-caption\">"+SelSyms[i].name+"</span> "+
+			"<span class=\"sym-switch-use inactive\" id='sym_sel_use_"+i+"' title=\"use this symbol to render the pattern\">use</span> "+
+			"<span class=\"sym-switch-add inactive\" id='sym_sel_add_"+i+"' title=\"add/remove this symbol on symbol list to render the pattern\">+</span>";
+
+			for (var j=0; j < SelSyms[i].svg.length; j++)
+			{
+				sym_entry += "<span class=\"sym-sel-svg\"><span class=\"sym-sel-svg-wrapper\"><svg id=\"Svg_m_"+i+"_"+j+"\"></svg></span></span>";
+			}
+			$("#sym_selector").append(sym_entry + "</div>");
+		}
 	}
 
-	$("#code").text(SelSyms[0].svg);
-	$("#sym_sel_0").addClass("sym-active");
+	$("#sym_selector").append("<div class=\"sym-sel-entry\" id='sym_sel_"+SelSyms.length+"'>"+
+	"<span class=\"sym-sel-caption\">custom</span> "+
+	"<span class=\"sym-switch-use inactive\" id='sym_sel_use_"+SelSyms.length+"'>use</span> "+
+	"<span class=\"sym-sel-svg\">&nbsp;use input box below</span></div>");
 
-	$('#sym_selector').slick({
-		slidesToShow: 5,
-		slidesToScroll: 3
-	});
+	$("#sym_selector").append("<div id=\"code_single\">"+
+	"<textarea class=\"svg-code\" cols=\"60\" rows=\"7\" name=\"code\" id=\"code\" title=\"enter SVG code for the symbol here\"></textarea>"+
+	"</div>");
+
+	$("#sym_sel_use_0").removeClass("inactive").addClass("active");
+	$("#sym_sel_add_0").removeClass("inactive").addClass("active");
+
+	$("#code_single").hide();
 
 	reset(GridSize);
 
@@ -1295,58 +1370,97 @@ $(document).ready(function () {
 
 	for (var i=0; i < SelSyms.length; i++)
 	{
-		var svg_preview = Snap("#Svg_"+i);
-		svg_preview.selectAll('*').remove();
-		var sym = svg_preview.g();
 		if (typeof(SelSyms[i].svg) === "string")
+		{
+			var svg_preview = Snap("#Svg_"+i);
+			svg_preview.selectAll('*').remove();
+			var sym = svg_preview.g();
 			var se = sym.append(Snap.parse(SelSyms[i].svg));
+			var bb = se.getBBox();
+			var xs = Math.floor(bb.x);
+			var ys = Math.floor(bb.y);
+			var w = Math.ceil(bb.x+bb.w)-Math.floor(bb.x);
+			var h = Math.ceil(bb.y+bb.h)-Math.floor(bb.y);
+			svg_preview.attr({viewBox: [xs, ys, w, h]});
+			svg_preview.attr({width: w, height: h});
+			if (w > 16) w = 16;
+			if (h > 16) h = 16;
+			$("#Svg_"+i).css({"margin-left":(8-Math.floor(0.5*w)), "margin-top":(8-Math.floor(0.5*h))});
+			SelSymsOffsets.push({"x": Math.round(bb.cx), "y": Math.round(bb.cy)});
+		}
 		else
-			var se = sym.append(Snap.parse(SelSyms[i].svg[0]));
-		var bb = se.getBBox();
-		svg_preview.attr({viewBox: [bb.x, bb.y, bb.w, bb.h]});
+		{
+			for (var j=0; j < SelSyms[i].svg.length; j++)
+			{
+				var svg_preview = Snap("#Svg_m_"+i+"_"+j);
+				svg_preview.selectAll('*').remove();
+				var sym = svg_preview.g();
+				var se = sym.append(Snap.parse(SelSyms[i].svg[j]));
+				var bb = se.getBBox();
+				var xs = Math.floor(bb.x);
+				var ys = Math.floor(bb.y);
+				var w = Math.ceil(bb.x+bb.w)-Math.floor(bb.x);
+				var h = Math.ceil(bb.y+bb.h)-Math.floor(bb.y);
+				svg_preview.attr({viewBox: [xs, ys, w, h]});
+				svg_preview.attr({width: w, height: h});
+				if (w > 16) w = 16;
+				if (h > 16) h = 16;
+				$("#Svg_m_"+i+"_"+j).css({"margin-left":(8-Math.floor(0.5*w)), "margin-top":(8-Math.floor(0.5*h))});
+				if (j == 0)
+					SelSymsOffsets.push({"x": Math.round(bb.cx), "y": Math.round(bb.cy)});
+			}
+		}
 	}
 
-	$('.sym-sel-entry').click(function() {
+	symbols_current = SelSyms[0].name;
+	SelSyms.push({"name": "custom", "svg": ""});
+
+	$('.sym-switch-use').click(function() {
 		if ($(this).attr("id"))
 		{
-			sym_id = parseInt($(this).attr("id").split("_")[2]);
-			$('.sym-sel-entry').removeClass("sym-active");
-			$(this).addClass("sym-active");
+			sym_id = parseInt($(this).attr("id").split("_")[3]);
+			$('.sym-switch-use').removeClass("active").addClass("inactive");
+			$('.sym-switch-add').removeClass("active").addClass("inactive");
+			$(this).removeClass("inactive").addClass("active");
+			$('#sym_sel_add_'+sym_id).removeClass("inactive").addClass("active");
 
-			if (typeof(SelSyms[sym_id].svg) === "string")
-			{
-				if (PatternData.GridSize > 256)
-				{
-					if (SelSyms[sym_id].svg.length < 600) $("#code").attr({"rows": 9});
-					else $("#code").attr({"rows": 20});
-				}
-				else $("#code").attr({"rows": 9});
+			symbols_current = SelSyms[sym_id].name;
 
-				$("#code").text(SelSyms[sym_id].svg);
+			if (symbols_current == "custom")
 				$("#code_single").show();
-				$("#code_multi").hide();
+			else
+				$("#code_single").hide();
+		}
+	});
+
+	$('.sym-switch-add').click(function() {
+		if ($(this).attr("id"))
+		{
+			sym_id = parseInt($(this).attr("id").split("_")[3]);
+
+			// only symbol: don't remove
+			if (symbols_current == SelSyms[sym_id].name)
+				return;
+
+			var syms = symbols_current.split("+");
+			var i = syms.indexOf(SelSyms[sym_id].name);
+			if (i >= 0)
+			{
+				syms.splice(i);
+				symbols_current = syms.join("+");
+				$(this).removeClass("active").addClass("inactive");
 			}
 			else
 			{
-				for (var i=0; i < SelSyms[sym_id].svg.length; i++)
-				{
-					if (i >= code_multi_cnt)
-					{
-						$("#code_multi").append('<textarea class="svg-code-small" name="code'+i+'" id="code'+i+'" cols="72" rows="2" title="enter SVG code for the symbol here"></textarea>');
-						code_multi_cnt++;
-					}
-					else
-						$("#code"+i).show();
+				$('.sym-switch-use').removeClass("active").addClass("inactive");
+				$(this).removeClass("inactive").addClass("active");
 
-					if (SelSyms[sym_id].svg[i].length < 120) $("#code"+i).attr({"rows": 2});
-					else $("#code"+i).attr({"rows": 4});
+				if (symbols_current == 'custom')
+					symbols_current = SelSyms[sym_id].name;
+				else
+					symbols_current = symbols_current+"+"+SelSyms[sym_id].name;
 
-					$("#code"+i).text(SelSyms[sym_id].svg[i]);
-					if (i == 0) $("#code").text(SelSyms[sym_id].svg[i]);
-				}
-				for (var i=SelSyms[sym_id].svg.length; i < code_multi_cnt; i++) $("#code"+i).hide();
 				$("#code_single").hide();
-				$("#code_multi").show();
 			}
 		}
 	});

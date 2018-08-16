@@ -15,10 +15,6 @@
   font-size: 90%;
 }
 
-#code_multi { 
-	display: none;
-}
-
 #msg {
   color: #000080;
   font-style:italic;
@@ -90,23 +86,50 @@ td {
   cursor:pointer;
 }
 
-.sym-sel-entry { 
-	text-align: center;
+
+.sym-switch-use, .sym-switch-add {
+  border: 1px solid #505050;
+  padding-right: 2px;
+  padding-left: 2px;
+  cursor:pointer;
+  vertical-align: middle;
 }
 
-.sym-sel-entry div.sym-sel-svg { 
-  margin:5px;
-	padding-top: 7px;
-	padding-bottom: 7px;
-	text-align: center;
-  background-color: #ffffff;
-	height:48px;
-	overflow: hide;
+.sym-sel-entry {
+	padding-top: 2px;
+	border-bottom: 1px solid #808080;
+	height: 20px;
 }
 
-.sym-sel-entry div.sym-sel-svg svg { 
-	max-width:40px;
-	max-height:40px;
+.sym-sel-caption {
+	padding: 3px;
+	width:90px;
+	overflow: hidden;
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.sym-sel-svg {
+	height:16px;
+	padding-right: 1px;
+	padding-left: 1px;
+	overflow: hidden;
+	margin-left: 1px;
+	border-left: 1px solid #808080;
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.sym-sel-svg-wrapper {
+	width:16px;
+	height:16px;
+	overflow: hidden;
+	display: inline-block;
+}
+
+.sym-sel-svg-wrapper svg { 
+	max-width:16px;
+	max-height:16px;
 }
 
 .sym-sel-caption { 
@@ -114,11 +137,7 @@ td {
 }
 
 .svg-code { 
-	width:460px;
-}
-
-.svg-code-small { 
-	width:442px;
+	width:396px;
 }
 
 #cmd_seq {
@@ -131,21 +150,9 @@ td {
 	word-wrap: break-word;
 }
 
-#code_single {
-	width: 420px;
-}
-
-#code_multi {
-	width: 468px;
-	height:122px;
-	overflow: scroll;
-}
-
 #sym_selector_box {
 	width: 420px;
-	height:100px;
-	padding-left: 24px;
-	padding-right: 24px;
+	overflow: scroll;
 }
 
 .sym-multi {
