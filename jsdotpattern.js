@@ -221,8 +221,16 @@ function shakePattern(strength)
 
 	for (var i=0; i < PatternData.DotCoordinates.length; i++)
 	{
-		var dx = (Math.random()-0.5)*strength*PatternData.DotDist;
-		var dy = (Math.random()-0.5)*strength*PatternData.DotDist;
+		if (strength > 0)
+		{
+			var dx = (Math.random()-0.5)*strength*PatternData.DotDist;
+			var dy = (Math.random()-0.5)*strength*PatternData.DotDist;
+		}
+		else
+		{
+			var dx = -(Math.random()-0.5)*strength;
+			var dy = -(Math.random()-0.5)*strength;
+		}
 
 		PatternData.DotCoordinates[i].x += dx;
 		PatternData.DotCoordinates[i].y += dy;
@@ -298,9 +306,31 @@ function rotate45Pattern()
 }
 
 // --------------------------------------------------
+// zigzag pattern horizontally
+// --------------------------------------------------
+function zigzagPattern()
+{
+	for (var i=0; i < PatternData.GridCnt*PatternData.GridCnt; i++)
+		PatternData.DotGrid[i] = new Array();
+
+	for (var i=0; i < PatternData.DotCoordinates.length; i++)
+	{
+		var yn = (PatternData.DotCoordinates[i].y-PatternData.GridSize/2)/(PatternData.GridSize/2);
+		//PatternData.DotCoordinates[i].x = PatternData.DotCoordinates[i].x - PatternData.GridSize * 0.05*(1.0-Math.sqrt(Math.sqrt(Math.abs(yn)))) ;
+		PatternData.DotCoordinates[i].x = PatternData.DotCoordinates[i].x + PatternData.GridSize * 0.05*(Math.abs(yn));
+		if (PatternData.DotCoordinates[i].x >= PatternData.GridSize) PatternData.DotCoordinates[i].x -= PatternData.GridSize;
+		if (PatternData.DotCoordinates[i].x < 0) PatternData.DotCoordinates[i].x += PatternData.GridSize;
+
+		var ix = Math.floor(PatternData.DotCoordinates[i].x/PatternData.DotRadius);
+		var iy = Math.floor(PatternData.DotCoordinates[i].y/PatternData.DotRadius);
+		PatternData.DotGrid[iy*PatternData.GridCnt+ix].push(i);
+	}
+}
+
+// --------------------------------------------------
 // relax dot pattern with periodic bounds
 // --------------------------------------------------
-function relaxStep(step, metric)
+function relaxStep(step, metric, wgtfn)
 {
 	var DotCoordinatesNew = PatternData.DotCoordinates;
 
@@ -338,6 +368,14 @@ function relaxStep(step, metric)
 				{
 					var ptx2 = PatternData.DotCoordinates[PatternData.DotGrid[diy2*PatternData.GridCnt+dix2][j]].x;
 					var pty2 = PatternData.DotCoordinates[PatternData.DotGrid[diy2*PatternData.GridCnt+dix2][j]].y;
+
+					var wgt = 1.0;
+					if (wgtfn != 0)
+					{
+						var yn = (pty2-PatternData.GridSize/2)/(PatternData.GridSize/2);
+						wgt = 1.0-Math.sqrt(Math.abs(yn))*0.975;
+					}
+
 					var dx = ptx-ptx2;
 					var dy = pty-pty2;
 					if (Math.abs(dx) > PatternData.GridSize/2)
@@ -367,9 +405,9 @@ function relaxStep(step, metric)
 					}
 					if ((d > 0.0) && (d < PatternData.DotRadius*PatternData.DotRadius))
 					{
-						ax += dx/d;
-						ay += dy/d;
-						wsum += 1.0/d;
+						ax += dx*wgt/(d*wgt*wgt);
+						ay += dy*wgt/(d*wgt*wgt);
+						wsum += 1.0/(d*wgt*wgt);
 					}
 				}
 			}
@@ -689,6 +727,19 @@ function render(px_align, sym_inl, rrot, symbol_names, scale, off_x, off_y, casi
 	if (rrot)
 		rrotate_cnt = 13;
 
+	var col_syms = [];
+
+	if (col_sym.substr(0,1) != '#')
+	{
+		col_syms = col_sym.split(":");
+		if (!rrot)
+			rrotate_cnt = col_syms.length;
+	}
+	else
+	{
+		col_syms.push(col_sym.substr(1,6));
+	}
+
 	if (symbol_names == "custom")
 		SelSyms[SelSyms.length-1].svg = $("#code").val();
 
@@ -719,11 +770,11 @@ function render(px_align, sym_inl, rrot, symbol_names, scale, off_x, off_y, casi
 					var f = Snap.parse(SelSyms[sid].svg[k]);
 
 					sym.push(s.g());
-					if ((col_sym != "#000000") && (col_sym != "#000"))
-						sym[c].attr({fill: col_sym});
+					if ((col_syms[0] != "#000000") && (col_syms[0] != "#000"))
+						sym[c].attr({fill: '#'+col_syms[j%col_syms.length]});
 					if (!sym_inl) sym[c].toDefs();
 					sym[c].append(f);
-					if (j > 0)
+					if (rrot && (j > 0))
 						sym[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
 					else
 						sym[c].transform("scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
@@ -735,7 +786,7 @@ function render(px_align, sym_inl, rrot, symbol_names, scale, off_x, off_y, casi
 						symc[c].attr({stroke: "#ffffff", strokeWidth: casing_width/scale, strokeLinecap: "round"});
 						if (!sym_inl) symc[c].toDefs();
 						symc[c].append(f2);
-						if (j > 0)
+						if (rrot && (j > 0))
 							symc[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
 						else
 							symc[c].transform("scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
@@ -748,11 +799,11 @@ function render(px_align, sym_inl, rrot, symbol_names, scale, off_x, off_y, casi
 				var f = Snap.parse(SelSyms[sid].svg);
 
 				sym.push(s.g());
-				if ((col_sym != "#000000") && (col_sym != "#000"))
-					sym[c].attr({fill: col_sym});
+				if ((col_syms[0] != "#000000") && (col_syms[0] != "#000"))
+					sym[c].attr({fill: '#'+col_syms[j%col_syms.length]});
 				if (!sym_inl) sym[c].toDefs();
 				sym[c].append(f);
-				if (j > 0)
+				if (rrot && (j > 0))
 					sym[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
 				else
 					sym[c].transform("scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
@@ -764,7 +815,7 @@ function render(px_align, sym_inl, rrot, symbol_names, scale, off_x, off_y, casi
 					symc[c].attr({stroke: "#ffffff", strokeWidth: casing_width/scale, strokeLinecap: "round"});
 					if (!sym_inl) symc[c].toDefs();
 					symc[c].append(f2);
-					if (j > 0)
+					if (rrot && (j > 0))
 						symc[c].transform("rotate("+(j*360/rrotate_cnt)+") scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
 					else
 						symc[c].transform("scale("+scale+") translate("+(0-off_xs)+", "+(0-off_ys)+")");
@@ -920,7 +971,7 @@ function command(cmd)
 				seed = params[2];
 
 		if (isNaN(sz)) sz = 256;
-		if (sz != 64) if (sz != 128) if (sz != 256) if (sz != 512) if (sz != 1024) if (sz != 2048) sz = 256;
+		if (sz != 32) if (sz != 64) if (sz != 128) if (sz != 256) if (sz != 512) if (sz != 1024) if (sz != 2048) sz = 256;
 
 		command_sequence_reset()
 		command_sequence_add("x,"+sz+","+seed);
@@ -1005,6 +1056,9 @@ function command(cmd)
 				$('#dot_radius_y').val(dot_radius_y);
 			}
 
+		//var wgtfn = 1;
+		var wgtfn = 0;
+
 		if (isNaN(steps)) steps = 25;
 		if (isNaN(metric)) metric = 2;
 		if (isNaN(dot_radius)) dot_radius = 32;
@@ -1031,7 +1085,7 @@ function command(cmd)
 				//else
 				//	console.log(event.data);
 			};
-			worker.postMessage(JSON.stringify({"step":0.02, "metric": metric, "data":PatternData}));
+			worker.postMessage(JSON.stringify({"step":0.02, "metric": metric, "wgtfn": wgtfn, "data":PatternData}));
 
 			for (var i=0; i < steps; i++)
 			{
@@ -1044,7 +1098,7 @@ function command(cmd)
 		{
 			for (var i=0; i < steps; i++)
 			{
-				relaxStep(0.02, metric);
+				relaxStep(0.02, metric, wgtfn);
 			}
 			if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
 			else updateDisplay();
@@ -1067,6 +1121,23 @@ function command(cmd)
 		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
 		else updateDisplay();
 	}
+	else if (params[0] == "j")
+	{
+		Math.seedrandom();
+		var seed = "jdp"+Math.floor(Math.random()*100000);
+		if (params[1])
+			if (params[1].length > 0)
+				seed = params[1];
+
+		command_sequence_add("j,"+seed);
+
+		Math.seedrandom(seed);
+
+		shakePattern(-0.5);
+
+		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
+		else updateDisplay();
+	}
 	else if (params[0] == "tr")
 	{
 		command_sequence_add("tr");
@@ -1081,6 +1152,15 @@ function command(cmd)
 		command_sequence_add("ts");
 
 		swapPattern();
+
+		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
+		else updateDisplay();
+	}
+	else if (params[0] == "tz")
+	{
+		command_sequence_add("tz");
+
+		zigzagPattern();
 
 		if (cmd_sequence_run.length > 0) command_sequence_run(cmd_sequence_run);
 		else updateDisplay();
@@ -1185,8 +1265,17 @@ function command(cmd)
 		if (params[10])
 			if (params[10].length > 0)
 			{
-				col_sym = "#"+params[10].substr(0,6);
-				$('#sym_color').val(col_sym);
+				if (params[10].length > 6)
+				{
+					col_sym = "#"+params[10].substr(0,6);
+					$('#sym_color').val(col_sym);
+					col_sym = params[10];
+				}
+				else
+				{
+					col_sym = "#"+params[10].substr(0,6);
+					$('#sym_color').val(col_sym);
+				}
 			}
 
 		var col_bkg = $('#bkg_color').val();
@@ -1287,12 +1376,20 @@ $(document).ready(function () {
 		command("s");
 	});
 
+	$('#B_jitter').click(function() {
+		command("j");
+	});
+
 	$('#B_rotate').click(function() {
 		command("tr");
 	});
 
 	$('#B_swap').click(function() {
 		command("ts");
+	});
+
+	$('#B_zigzag').click(function() {
+		command("tz");
 	});
 
 	$('#B_render').click(function() {
@@ -1440,15 +1537,42 @@ $(document).ready(function () {
 
 			// only symbol: don't remove
 			if (symbols_current == SelSyms[sym_id].name)
+			{
+				$('.sym-switch-use').removeClass("active").addClass("inactive");
+				$('.sym-switch-add').removeClass("active").addClass("inactive");
+				$('#sym_sel_use_'+sym_id).removeClass("inactive").addClass("active");
 				return;
+			}
 
 			var syms = symbols_current.split("+");
 			var i = syms.indexOf(SelSyms[sym_id].name);
 			if (i >= 0)
 			{
-				syms.splice(i);
-				symbols_current = syms.join("+");
 				$(this).removeClass("active").addClass("inactive");
+
+				if (syms.length == 2)
+				{
+					// only one remaining - make that 'use'
+					$('.sym-switch-use').removeClass("active").addClass("inactive");
+					$('.sym-switch-add').removeClass("active").addClass("inactive");
+					for (var j=0; j < syms.length; j++)
+						if (j != i)
+						{
+							for (var k=0; k < SelSyms.length; k++)
+								if (syms[j] == SelSyms[k].name)
+								{
+									$('#sym_sel_use_'+k).removeClass("inactive").addClass("active");
+									sym_id = k;
+									symbols_current = SelSyms[sym_id].name;
+									return;
+								}
+						}
+				}
+				else
+				{
+					syms.splice(i);
+					symbols_current = syms.join("+");
+				}
 			}
 			else
 			{
@@ -1458,7 +1582,15 @@ $(document).ready(function () {
 				if (symbols_current == 'custom')
 					symbols_current = SelSyms[sym_id].name;
 				else
+				{
+					for (var j=0; j < syms.length; j++)
+						for (var k=0; k < SelSyms.length; k++)
+							if (syms[j] == SelSyms[k].name)
+							{
+								$('#sym_sel_add_'+k).removeClass("inactive").addClass("active");
+							}
 					symbols_current = symbols_current+"+"+SelSyms[sym_id].name;
+				}
 
 				$("#code_single").hide();
 			}

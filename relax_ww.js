@@ -2,12 +2,13 @@
 var PatternData;
 var step = 0.02;
 var metric = 2;
+var wgtfn = 0;
 
 
 // --------------------------------------------------
 // relax dot pattern with periodic bounds
 // --------------------------------------------------
-function relaxStep_ww(step, metric)
+function relaxStep_ww(step, metric, wgtfn)
 {
 	var DotCoordinatesNew = PatternData.DotCoordinates;
 
@@ -30,6 +31,15 @@ function relaxStep_ww(step, metric)
 		var ay = 0.0;
 		var wsum = 0.0;
 
+		var wgt1 = 1.0;
+
+		//if (metric == 2)
+		if (wgtfn != 0)
+		{
+			var yn = (pty-PatternData.GridSize/2)/(PatternData.GridSize/2);
+			wgt1 = Math.abs(yn*yn);
+		}
+
 		for (var diy=iy-1; diy <= iy+1; diy++)
 			for (var dix=ix-1; dix <= ix+1; dix++)
 			{
@@ -41,10 +51,23 @@ function relaxStep_ww(step, metric)
 				if (diy2 >= PatternData.GridCnt) diy2 -= PatternData.GridCnt;
 
 				for (var j=0; j < PatternData.DotGrid[diy2*PatternData.GridCnt+dix2].length; j++)
-				if (j != i)
+				if (PatternData.DotGrid[diy2*PatternData.GridCnt+dix2][j] != i)
 				{
 					var ptx2 = PatternData.DotCoordinates[PatternData.DotGrid[diy2*PatternData.GridCnt+dix2][j]].x;
 					var pty2 = PatternData.DotCoordinates[PatternData.DotGrid[diy2*PatternData.GridCnt+dix2][j]].y;
+
+					var wgt = 1.0;
+					if (wgtfn != 0)
+					{
+						var yn = (pty2-PatternData.GridSize/2)/(PatternData.GridSize/2);
+						//wgt = 1.0-Math.sqrt(Math.abs(yn))*0.975;
+						if (Math.abs(yn) > 0.01)
+							wgt = 0.15*(1.0/Math.abs(yn))-0.05;
+
+						else
+							wgt = 0.15*(1.0/0.01)-0.05;
+					}
+
 					var dx = ptx-ptx2;
 					var dy = pty-pty2;
 					if (Math.abs(dx) > PatternData.GridSize/2)
@@ -74,16 +97,18 @@ function relaxStep_ww(step, metric)
 					}
 					if ((d > 0.0) && (d < PatternData.DotRadius*PatternData.DotRadius))
 					{
-						ax += dx/d;
-						ay += dy/d;
-						wsum += 1.0/d;
+						ax += dx*wgt/(d*wgt*wgt);
+						ay += dy*wgt/(d*wgt*wgt);
+						wsum += 1.0/(d*wgt*wgt);
 					}
 				}
 			}
 
 		if (wsum > 0)
 		{
-			DotCoordinatesNew[i].x = PatternData.DotCoordinates[i].x + step*ax/wsum;
+			//DotCoordinatesNew[i].x = PatternData.DotCoordinates[i].x + step*ax/wsum + (step*wgt1*0.18);
+			DotCoordinatesNew[i].x = PatternData.DotCoordinates[i].x + step*ax/wsum + (step*wgt1*0.14);
+			//DotCoordinatesNew[i].x = PatternData.DotCoordinates[i].x + step*ax/wsum;
 			DotCoordinatesNew[i].y = PatternData.DotCoordinates[i].y + step*ay/wsum;
 			if (DotCoordinatesNew[i].x < 0) DotCoordinatesNew[i].x += PatternData.GridSize;
 			if (DotCoordinatesNew[i].y < 0) DotCoordinatesNew[i].y += PatternData.GridSize;
@@ -117,7 +142,7 @@ self.addEventListener('message', function(e) {
 		switch (data) {
     case 'step':
       self.postMessage('doing relax step');
-			relaxStep_ww(step, metric);
+			relaxStep_ww(step, metric, wgtfn);
       self.postMessage('done relax step');
       break;
     case 'stop':
@@ -133,6 +158,7 @@ self.addEventListener('message', function(e) {
 		PatternData = data.data;
 		step = data.step;
 		metric = data.metric;
+		wgtfn = data.wgtfn;
 		self.postMessage("data transferred "+e.data.length);
 	}
 }, false);

@@ -86,8 +86,10 @@
 				<input type="button" name="B_relax" id="B_relax" value="relax" title="relax the dot positions to maximize their distance">
 				<input type="button" name="B_relax10" id="B_relax10" value="relax &times;10" title="relax more">
 				<input type="button" name="B_shake" id="B_shake" value="shake" title="randomize the pattern a bit">
+				<input type="button" name="B_jitter" id="B_jitter" value="jitter" title="jitter dot positions">
 				<input type="button" class="btn-small" name="B_rotate" id="B_rotate" value="♦" title="rotate the dot pattern 45 degrees and scale to fit">
 				<input type="button" class="btn-small" name="B_swap" id="B_swap" value="➚" title="mirror dot pattern diagonally">
+				<input type="button" class="btn-small" name="B_zigzag" id="B_zigzag" value="&gt;" title="zigzag pattern horizontally">
 				</fieldset>
 			</td>
 			<td>
@@ -128,6 +130,7 @@
 				<li><em>relax</em> relaxes the point positions by maximizing their distance.</li>
 				<li><em>relax &times;10</em> relaxes ten times.</li>
 				<li><em>shake</em> displaces the points of the current set each by a small random distance.</li>
+				<li><em>jitter</em> displaces the points of the current set each by a sub pixel distance to randomize pixel alignment</li>
 				<li><em>render</em> renders the current point pattern in a svg using the symbol specified on the right.</li>
 				<li><em>render (px aligned)</em> renders the current point pattern aligned to integer pixel coordinates.</li>
 				<li><em>render (inlined)</em> renders the current point pattern aligned to integer pixel coordinates and inlines the symbols instead of referencing them.</li>
